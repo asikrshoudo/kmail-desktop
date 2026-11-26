@@ -12,9 +12,8 @@ class AttachmentPreviewDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.all(24),
-      child: SizedBox(
-        width: 920,
-        height: 680,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 920, maxHeight: 680),
         child: Column(
           children: [
             Padding(

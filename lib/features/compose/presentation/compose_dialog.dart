@@ -319,7 +319,10 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
     final (ok, msg) = await ref.read(inboxControllerProvider.notifier).sendMessage(_buildMessage(folder: MailFolder.sent, draft: false));
     if (!mounted) return;
     setState(() => _sending = false);
-    if (ok) Navigator.of(context).pop();
+    if (ok) {
+      Navigator.of(context).pop();
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
   Future<void> _confirmClose() async {
@@ -353,7 +356,7 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#39;')
-      .replaceAll('\n', '<br/>');
+      .replaceAll('\n', '<br />');
 }
 
 extension on String {

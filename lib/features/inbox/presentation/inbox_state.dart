@@ -120,6 +120,7 @@ class InboxState {
         m.sender.name, m.sender.email, m.subject, m.preview, m.bodyPlainText,
         ...m.to.map((e) => e.email), ...m.to.map((e) => e.name),
         ...m.cc.map((e) => e.email), ...m.bcc.map((e) => e.email),
+        ...m.labels,
       ].join(' ').toLowerCase();
       return haystack.contains(q);
     }).toList();

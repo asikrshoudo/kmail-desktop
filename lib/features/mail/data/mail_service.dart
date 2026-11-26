@@ -62,7 +62,11 @@ class MailService {
     try {
       await _connectImap(client, config, password);
       await client.selectMailboxByPath(mailboxPath);
-      await client.uidStore(MessageSequence.fromId(uid), seen ? [MessageFlags.seen] : [MessageFlags.seen], action: seen ? StoreAction.add : StoreAction.remove);
+      await client.uidStore(
+        MessageSequence.fromId(uid),
+        [MessageFlags.seen],
+        action: seen ? StoreAction.add : StoreAction.remove,
+      );
       await client.logout();
     } finally { await client.disconnect(); }
   }

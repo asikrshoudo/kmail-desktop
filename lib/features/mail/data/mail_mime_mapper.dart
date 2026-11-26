@@ -21,7 +21,7 @@ class MailMimeMapper {
     final rawFlags = (mime.flags ?? const []).toList();
     final flagStrings = rawFlags.map((f) => f.toString()).join(' ').toLowerCase();
     final isUnread = !flagStrings.contains('seen');
-    final isStarred = flagStrings.contains('flagged') || flagStrings.contains(r'lagged');
+    final isStarred = flagStrings.contains('flagged');
     final bodyPlain = plain.trim().isNotEmpty ? plain : _stripHtml(html);
     final bodyHtml = html.trim().isNotEmpty
         ? html

@@ -31,8 +31,19 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
     final colors = context.appColors.tokens;
     if (message == null) {
       return Center(
-        child: Text('Select a message to read',
-            style: Theme.of(context).textTheme.bodyMedium),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.mail_outline_rounded,
+              size: 42,
+              color: colors.textSecondary,
+            ),
+            const SizedBox(height: 12),
+            Text('Select a message to read',
+                style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
       );
     }
 
@@ -250,6 +261,7 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
       ),
     );
     if (confirm == true) {
+      if (!context.mounted) return;
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }

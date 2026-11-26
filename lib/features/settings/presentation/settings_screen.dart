@@ -18,9 +18,8 @@ class SettingsScreen extends ConsumerWidget {
 
     return Dialog(
       insetPadding: const EdgeInsets.all(24),
-      child: SizedBox(
-        width: 920,
-        height: 720,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 920, maxHeight: 720),
         child: Column(
           children: [
             Padding(
