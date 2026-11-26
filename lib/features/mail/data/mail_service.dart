@@ -114,11 +114,7 @@ class MailService {
 
   Future<void> _connectImap(ImapClient client, MailAccountConfig config, String password) async {
     final isSecure = config.imapSecurity == MailSecurity.sslTls;
-    await (client as dynamic).connectToServer(
-      config.imapHost,
-      port: config.imapPort,
-      isSecure: isSecure,
-    );
+    await _connectServer(client, config.imapHost, config.imapPort, isSecure);
     if (config.imapSecurity == MailSecurity.startTls) {
       await client.startTls();
     }
@@ -127,16 +123,21 @@ class MailService {
 
   Future<void> _connectSmtp(SmtpClient client, MailAccountConfig config, String password) async {
     final isSecure = config.smtpSecurity == MailSecurity.sslTls;
-    await (client as dynamic).connectToServer(
-      config.smtpHost,
-      port: config.smtpPort,
-      isSecure: isSecure,
-    );
+    await _connectServer(client, config.smtpHost, config.smtpPort, isSecure);
     await client.ehlo();
     if (config.smtpSecurity == MailSecurity.startTls) {
       await client.startTls();
     }
     await client.authenticate(config.username, password, AuthMechanism.plain);
+  }
+
+  Future<void> _connectServer(dynamic client, String host, int port, bool isSecure) async {
+    final fn = client.connectToServer as Function;
+    try {
+      await Function.apply(fn, [host, port], {#isSecure: isSecure});
+    } catch (_) {
+      await Function.apply(fn, [host], {#port: port, #isSecure: isSecure});
+    }
   }
 
   Future<Mailbox?> _selectMailbox(ImapClient client, MailFolder folder) async {
