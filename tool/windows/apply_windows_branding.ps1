@@ -92,7 +92,7 @@ void SetKmailAppUserModelId() {
 
 '@
     if ($main -match '(?m)^int APIENTRY wWinMain\(') {
-      $main = [regex]::Replace($main, '(?m)^int APIENTRY wWinMain\(', ($helper + `r`n + 'int APIENTRY wWinMain('), 1)
+      $main = [regex]::Replace($main, '(?m)^int APIENTRY wWinMain\(', ($helper + "`r`n" + 'int APIENTRY wWinMain('), 1)
     }
 
     $call = '  SetKmailAppUserModelId();' + "`r`n`r`n"
