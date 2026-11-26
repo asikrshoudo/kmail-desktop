@@ -144,26 +144,32 @@ class _SidebarItem extends StatelessWidget {
     final colors = context.appColors.tokens;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: ListTile(
-        dense: true,
-        selected: selected,
-        leading: Icon(item.icon,
-            size: 20, color: selected ? colors.primary : colors.textSecondary),
-        title: Text(item.label),
-        trailing: item.count > 0
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? colors.primary.withValues(alpha: 0.12)
-                      : colors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text('${item.count}',
-                    style: Theme.of(context).textTheme.labelSmall),
-              )
-            : null,
-        onTap: onTap,
+      child: Material(
+        color: selected ? colors.selection : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: ListTile(
+          dense: true,
+          selected: selected,
+          selectedTileColor: Colors.transparent,
+          leading: Icon(item.icon,
+              size: 20, color: selected ? colors.primary : colors.textSecondary),
+          title: Text(item.label),
+          trailing: item.count > 0
+              ? Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? colors.primary.withValues(alpha: 0.12)
+                        : colors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text('${item.count}',
+                      style: Theme.of(context).textTheme.labelSmall),
+                )
+              : null,
+          onTap: onTap,
+        ),
       ),
     );
   }
