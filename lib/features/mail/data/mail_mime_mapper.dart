@@ -18,9 +18,10 @@ class MailMimeMapper {
     final plain = mime.decodeTextPlainPart() ?? '';
     final html = mime.decodeTextHtmlPart() ?? '';
     final date = mime.decodeDate() ?? DateTime.now();
-    final List<MessageFlags> flags = (mime.flags ?? const <MessageFlags>[]).toList();
-    final isUnread = !flags.contains(MessageFlags.seen);
-    final isStarred = flags.contains(MessageFlags.flagged);
+    final rawFlags = (mime.flags ?? const []).toList();
+    final flagStrings = rawFlags.map((f) => f.toString()).join(' ').toLowerCase();
+    final isUnread = !flagStrings.contains('seen');
+    final isStarred = flagStrings.contains('flagged') || flagStrings.contains(r'lagged');
     final bodyPlain = plain.trim().isNotEmpty ? plain : _stripHtml(html);
     final bodyHtml = html.trim().isNotEmpty
         ? html
@@ -71,7 +72,8 @@ class MailMimeMapper {
       ));
     }
 
-    final String? mimeId = (mime as dynamic).messageId as String?;
+    final Object? mimeIdRaw = (mime as dynamic).messageId;
+    final String? mimeId = mimeIdRaw is String ? mimeIdRaw : null;
     final id = mime.guid ??
         mimeId ??
         '$accountId-${folder.name}-${date.microsecondsSinceEpoch}-${subject.hashCode}';
