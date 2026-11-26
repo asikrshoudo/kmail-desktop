@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kmail_desktop/features/inbox/data/mock_mail_repository.dart';
 import 'package:kmail_desktop/shared/models/folder_item.dart';

@@ -118,8 +118,8 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                           color: colors.surfaceMuted,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: colors.border)),
-                      child: Row(
-                        children: const [
+                      child: const Row(
+                        children: [
                           _FmtIcon(icon: Icons.format_bold_rounded),
                           _FmtIcon(icon: Icons.format_italic_rounded),
                           _FmtIcon(icon: Icons.format_underlined_rounded),

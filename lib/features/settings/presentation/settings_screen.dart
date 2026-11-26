@@ -177,14 +177,14 @@ class SettingsScreen extends ConsumerWidget {
                         'UI foundation only. Real account management and auth are planned.',
                     child: Column(
                       children: [
-                        ListTile(
+                        const ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: CircleAvatar(
                               backgroundColor: Color(0xFF1F4B99),
-                              child: const Text('A',
+                              child: Text('A',
                                   style: TextStyle(color: Colors.white))),
-                          title: const Text('Alex Morgan'),
-                          subtitle: const Text(
+                          title: Text('Alex Morgan'),
+                          subtitle: Text(
                               'alex.morgan@kmail.app • Default (mock)'),
                         ),
                         Align(
@@ -199,9 +199,9 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   _Section(
                     title: 'Privacy',
-                    child: Column(
+                    child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Icon(Icons.shield_outlined),

@@ -1,10 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kmail_desktop/app/app.dart';
-import 'package:kmail_desktop/app/state/settings_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:flutter/foundation.dart';
 
 Future<void> bootstrap() async {
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
@@ -48,3 +47,4 @@ final sharedPreferencesProvider =
     FutureProvider<SharedPreferences>((ref) async {
   return SharedPreferences.getInstance();
 });
+
