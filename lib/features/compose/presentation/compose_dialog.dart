@@ -8,7 +8,11 @@ import 'package:kmail_desktop/shared/models/mail_models.dart';
 enum ComposeMode { newMessage, reply, replyAll, forward }
 
 class ComposeDialog extends ConsumerStatefulWidget {
-  const ComposeDialog({super.key, this.replyTo, this.mode = ComposeMode.newMessage});
+  const ComposeDialog({
+    super.key,
+    this.replyTo,
+    this.mode = ComposeMode.newMessage,
+  });
 
   final EmailMessage? replyTo;
   final ComposeMode mode;
@@ -30,7 +34,8 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
     super.initState();
     final reply = widget.replyTo;
     final subject = switch (widget.mode) {
-      ComposeMode.reply || ComposeMode.replyAll => reply != null ? 'Re: ${reply.subject}' : '',
+      ComposeMode.reply || ComposeMode.replyAll =>
+        reply != null ? 'Re: ${reply.subject}' : '',
       ComposeMode.forward => reply != null ? 'Fwd: ${reply.subject}' : '',
       ComposeMode.newMessage => '',
     };
@@ -38,7 +43,9 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
       ComposeMode.reply || ComposeMode.replyAll => reply?.sender.email ?? '',
       _ => '',
     };
-    final cc = widget.mode == ComposeMode.replyAll ? reply?.cc.map((e) => e.email).join(', ') ?? '' : '';
+    final cc = widget.mode == ComposeMode.replyAll
+        ? reply?.cc.map((e) => e.email).join(', ') ?? ''
+        : '';
     final body = reply == null
         ? ''
         : '\n\n\nOn ${reply.date}, ${reply.sender.display} wrote:\n> ${reply.bodyPlainText.replaceAll('\n', '\n> ')}';
@@ -74,8 +81,17 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  Expanded(child: Text(_title(), style: Theme.of(context).textTheme.titleLarge)),
-                  IconButton(tooltip: 'Close', onPressed: _confirmClose, icon: const Icon(Icons.close_rounded)),
+                  Expanded(
+                    child: Text(
+                      _title(),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: _confirmClose,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
                 ],
               ),
             ),
@@ -94,15 +110,32 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                     ] else
                       Align(
                         alignment: Alignment.centerRight,
-                        child: TextButton(onPressed: () => setState(() => _showCcBcc = true), child: const Text('Add Cc/Bcc')),
+                        child: TextButton(
+                          onPressed: () => setState(() => _showCcBcc = true),
+                          child: const Text('Add Cc/Bcc'),
+                        ),
                       ),
                     const SizedBox(height: 8),
                     _field('Subject', _subject),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: colors.surfaceMuted, borderRadius: BorderRadius.circular(10), border: Border.all(color: colors.border)),
-                      child: const Row(children: [Text('Formatting UI foundation (mock)', style: TextStyle(fontSize: 12))]),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: colors.border),
+                      ),
+                      child: const Row(
+                        children: [
+                          Text(
+                            'Formatting UI foundation (mock)',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Expanded(
@@ -111,7 +144,9 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                         maxLines: null,
                         expands: true,
                         textAlignVertical: TextAlignVertical.top,
-                        decoration: const InputDecoration(hintText: 'Write your message...'),
+                        decoration: const InputDecoration(
+                          hintText: 'Write your message...',
+                        ),
                       ),
                     ),
                   ],
@@ -123,11 +158,22 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  OutlinedButton.icon(onPressed: _saveDraft, icon: const Icon(Icons.save_outlined), label: const Text('Save draft')),
+                  OutlinedButton.icon(
+                    onPressed: _saveDraft,
+                    icon: const Icon(Icons.save_outlined),
+                    label: const Text('Save draft'),
+                  ),
                   const SizedBox(width: 8),
-                  TextButton(onPressed: _discard, child: const Text('Discard')),
+                  TextButton(
+                    onPressed: _discard,
+                    child: const Text('Discard'),
+                  ),
                   const Spacer(),
-                  FilledButton.icon(onPressed: _send, icon: const Icon(Icons.send_rounded, size: 18), label: const Text('Send')),
+                  FilledButton.icon(
+                    onPressed: _send,
+                    icon: const Icon(Icons.send_rounded, size: 18),
+                    label: const Text('Send'),
+                  ),
                 ],
               ),
             ),
@@ -144,7 +190,10 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
         ComposeMode.forward => 'Forward',
       };
 
-  Widget _field(String label, TextEditingController controller) => TextField(controller: controller, decoration: InputDecoration(labelText: label));
+  Widget _field(String label, TextEditingController controller) => TextField(
+        controller: controller,
+        decoration: InputDecoration(labelText: label),
+      );
 
   EmailMessage _buildMessage({required MailFolder folder, required bool draft}) {
     final now = DateTime.now();
@@ -156,20 +205,29 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
       return EmailAddress(name: value.split('@').first, email: value);
     }
 
-    List<EmailAddress> parseList(String raw) => raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).map(parse).toList();
+    List<EmailAddress> parseList(String raw) => raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .map(parse)
+        .toList();
     final body = _body.text;
     return EmailMessage(
-      id: widget.replyTo != null && draft ? 'draft-${widget.replyTo!.id}-${widget.mode.name}' : 'local-${now.microsecondsSinceEpoch}',
+      id: widget.replyTo != null && draft
+          ? 'draft-${widget.replyTo!.id}-${widget.mode.name}'
+          : 'local-${now.microsecondsSinceEpoch}',
       accountId: account.id,
       folder: folder,
       sender: EmailAddress(name: account.name, email: account.email),
       to: parseList(_to.text),
       cc: parseList(_cc.text),
       bcc: parseList(_bcc.text),
-      subject: _subject.text.trim().isEmpty ? '(No subject)' : _subject.text.trim(),
+      subject:
+          _subject.text.trim().isEmpty ? '(No subject)' : _subject.text.trim(),
       preview: body.trim().replaceAll('\n', ' ').take(120),
       bodyPlainText: body,
-      bodyHtml: '<div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.6">${_escape(body)}</div>',
+      bodyHtml:
+          '<div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.6">${_escape(body)}</div>',
       date: now,
       isDraft: draft,
       isUnread: false,
@@ -177,21 +235,33 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
   }
 
   void _saveDraft() {
-    ref.read(inboxControllerProvider.notifier).saveDraft(_buildMessage(folder: MailFolder.drafts, draft: true));
+    ref.read(inboxControllerProvider.notifier).saveDraft(
+          _buildMessage(folder: MailFolder.drafts, draft: true),
+        );
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Draft saved (mock local state).')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Draft saved (mock local state).')),
+    );
   }
 
   void _discard() => Navigator.of(context).pop();
 
   void _send() {
     if (_to.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add at least one recipient.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one recipient.')),
+      );
       return;
     }
-    ref.read(inboxControllerProvider.notifier).sendMock(_buildMessage(folder: MailFolder.sent, draft: false));
+    ref.read(inboxControllerProvider.notifier).sendMock(
+          _buildMessage(folder: MailFolder.sent, draft: false),
+        );
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Message sent (simulated). No network call was made.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Message sent (simulated). No network call was made.'),
+      ),
+    );
   }
 
   Future<void> _confirmClose() async {
@@ -205,15 +275,27 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
         title: const Text('Discard unsaved changes?'),
         content: const Text('You have unsaved compose content.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep editing')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Discard')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Discard'),
+          ),
         ],
       ),
     );
     if (shouldClose == true && mounted) Navigator.of(context).pop();
   }
 
-  String _escape(String text) => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;').replaceAll('\n', '<br/>');
+  String _escape(String text) => text
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;')
+      .replaceAll('\n', '<br/>');
 }
 
 extension on String {
