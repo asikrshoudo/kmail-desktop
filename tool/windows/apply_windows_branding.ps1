@@ -48,7 +48,7 @@ if (Test-Path $rootCmake) {
 $runnerRc = Join-Path $windowsDir "runner\Runner.rc"
 if (Test-Path $runnerRc) {
   $rc = Get-Content $runnerRc -Raw
-  $rc = [regex]::Replace($rc, '#define VERSION_AS_NUMBER\s+[0-9,]+', #define VERSION_AS_NUMBER $verComma)
+   = [regex]::Replace(, '#define VERSION_AS_NUMBER\s+[0-9,]+', "#define VERSION_AS_NUMBER ")
    = [regex]::Replace(, '#define VERSION_AS_STRING\s+"[^"]+"', ('#define VERSION_AS_STRING "' +  + '"'))
   $rc = [regex]::Replace($rc, '(VALUE\s+\"CompanyName\"\s*,\s*\")[^\"]*(\")', '${1}TheKami${2}')
   $rc = [regex]::Replace($rc, '(VALUE\s+\"FileDescription\"\s*,\s*\")[^\"]*(\")', '${1}Kmail${2}')
