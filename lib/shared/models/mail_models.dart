@@ -2,59 +2,44 @@ import 'package:flutter/foundation.dart';
 
 enum MailFolder {
   inbox,
-  starred,
-  snoozed,
   drafts,
   sent,
-  archive,
   spam,
   trash,
+  archive,
   custom,
 }
 
-enum AttachmentType {
-  pdf,
-  png,
-  jpg,
-  gif,
-  webp,
-  txt,
-  csv,
-  docx,
-  xlsx,
-  zip,
-  html,
-  unknown
+enum MailboxView {
+  allInboxes,
+  starred,
+  unread,
+  inbox,
+  drafts,
+  sent,
+  spam,
+  trash,
 }
+
+enum AttachmentType { pdf, png, jpg, gif, webp, txt, csv, docx, xlsx, zip, html, unknown }
 
 @immutable
 class EmailAddress {
   const EmailAddress({required this.name, required this.email});
-
   final String name;
   final String email;
-
   String get display => name.isNotEmpty ? '$name <$email>' : email;
 }
 
 @immutable
 class Attachment {
-  const Attachment({
-    required this.id,
-    required this.name,
-    required this.type,
-    required this.sizeBytes,
-    this.previewText,
-  });
-
+  const Attachment({required this.id, required this.name, required this.type, required this.sizeBytes, this.previewText});
   final String id;
   final String name;
   final AttachmentType type;
   final int sizeBytes;
   final String? previewText;
-
-  String get extension =>
-      name.contains('.') ? name.split('.').last.toLowerCase() : '';
+  String get extension => name.contains('.') ? name.split('.').last.toLowerCase() : '';
 }
 
 @immutable
@@ -146,14 +131,7 @@ class EmailMessage {
 
 @immutable
 class MailAccount {
-  const MailAccount({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.colorValue,
-    this.isDefault = false,
-  });
-
+  const MailAccount({required this.id, required this.name, required this.email, required this.colorValue, this.isDefault = false});
   final String id;
   final String name;
   final String email;

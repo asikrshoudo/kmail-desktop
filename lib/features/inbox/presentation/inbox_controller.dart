@@ -4,11 +4,14 @@ import 'package:kmail_desktop/features/inbox/data/mock_mail_repository.dart';
 import 'package:kmail_desktop/shared/models/folder_item.dart';
 import 'package:kmail_desktop/shared/models/mail_models.dart';
 
+const allAccountsId = 'all';
+
 class InboxState {
   const InboxState({
-    required this.account,
+    required this.accounts,
     required this.messages,
-    required this.selectedFolder,
+    required this.selectedAccountId,
+    required this.selectedView,
     required this.selectedMessageId,
     required this.selectedIds,
     required this.searchQuery,
@@ -17,9 +20,10 @@ class InboxState {
     this.filterAttachmentsOnly = false,
   });
 
-  final MailAccount account;
+  final List<MailAccount> accounts;
   final List<EmailMessage> messages;
-  final MailFolder selectedFolder;
+  final String selectedAccountId; // account id or allAccountsId
+  final MailboxView selectedView;
   final String? selectedMessageId;
   final Set<String> selectedIds;
   final String searchQuery;
@@ -28,9 +32,10 @@ class InboxState {
   final bool filterAttachmentsOnly;
 
   InboxState copyWith({
-    MailAccount? account,
+    List<MailAccount>? accounts,
     List<EmailMessage>? messages,
-    MailFolder? selectedFolder,
+    String? selectedAccountId,
+    MailboxView? selectedView,
     String? selectedMessageId,
     Set<String>? selectedIds,
     String? searchQuery,
@@ -40,9 +45,10 @@ class InboxState {
     bool clearSelectedMessage = false,
   }) {
     return InboxState(
-      account: account ?? this.account,
+      accounts: accounts ?? this.accounts,
       messages: messages ?? this.messages,
-      selectedFolder: selectedFolder ?? this.selectedFolder,
+      selectedAccountId: selectedAccountId ?? this.selectedAccountId,
+      selectedView: selectedView ?? this.selectedView,
       selectedMessageId: clearSelectedMessage
           ? null
           : (selectedMessageId ?? this.selectedMessageId),
@@ -55,21 +61,35 @@ class InboxState {
     );
   }
 
+  bool get isUnified => selectedAccountId == allAccountsId;
+
+  MailAccount? get activeAccount {
+    if (isUnified) return null;
+    for (final a in accounts) {
+      if (a.id == selectedAccountId) return a;
+    }
+    return accounts.isNotEmpty ? accounts.first : null;
+  }
+
+  List<EmailMessage> get scopedMessages {
+    if (isUnified) return messages;
+    return messages.where((m) => m.accountId == selectedAccountId).toList();
+  }
+
   List<EmailMessage> get visibleMessages {
     final q = searchQuery.trim().toLowerCase();
-    final filtered = messages.where((m) {
-      final inFolder = switch (selectedFolder) {
-        MailFolder.starred => m.isStarred && m.folder != MailFolder.trash,
-        MailFolder.inbox => m.folder == MailFolder.inbox,
-        MailFolder.snoozed => m.folder == MailFolder.snoozed,
-        MailFolder.drafts => m.folder == MailFolder.drafts,
-        MailFolder.sent => m.folder == MailFolder.sent,
-        MailFolder.archive => m.folder == MailFolder.archive,
-        MailFolder.spam => m.folder == MailFolder.spam,
-        MailFolder.trash => m.folder == MailFolder.trash,
-        MailFolder.custom => m.folder == MailFolder.custom,
+    final scoped = scopedMessages.where((m) {
+      final inView = switch (selectedView) {
+        MailboxView.allInboxes => m.folder == MailFolder.inbox,
+        MailboxView.starred => m.isStarred && m.folder != MailFolder.trash,
+        MailboxView.unread => m.isUnread && m.folder != MailFolder.trash,
+        MailboxView.inbox => m.folder == MailFolder.inbox,
+        MailboxView.drafts => m.folder == MailFolder.drafts,
+        MailboxView.sent => m.folder == MailFolder.sent,
+        MailboxView.spam => m.folder == MailFolder.spam,
+        MailboxView.trash => m.folder == MailFolder.trash,
       };
-      if (!inFolder) return false;
+      if (!inView) return false;
       if (filterUnreadOnly && !m.isUnread) return false;
       if (filterAttachmentsOnly && !m.hasAttachments) return false;
       if (q.isEmpty) return true;
@@ -83,9 +103,9 @@ class InboxState {
       ].join(' ').toLowerCase();
       return haystack.contains(q);
     }).toList();
-    filtered.sort((a, b) =>
+    scoped.sort((a, b) =>
         sortNewestFirst ? b.date.compareTo(a.date) : a.date.compareTo(b.date));
-    return filtered;
+    return scoped;
   }
 
   EmailMessage? get selectedMessage {
@@ -97,83 +117,92 @@ class InboxState {
     return null;
   }
 
+  int countView(MailboxView view) {
+    final scoped = scopedMessages;
+    return scoped.where((m) {
+      return switch (view) {
+        MailboxView.allInboxes => m.folder == MailFolder.inbox,
+        MailboxView.starred => m.isStarred && m.folder != MailFolder.trash,
+        MailboxView.unread => m.isUnread && m.folder != MailFolder.trash,
+        MailboxView.inbox => m.folder == MailFolder.inbox,
+        MailboxView.drafts => m.folder == MailFolder.drafts,
+        MailboxView.sent => m.folder == MailFolder.sent,
+        MailboxView.spam => m.folder == MailFolder.spam,
+        MailboxView.trash => m.folder == MailFolder.trash,
+      };
+    }).length;
+  }
+
   List<FolderItem> get folders {
-    int count(MailFolder f) => messages.where((m) => m.folder == f).length;
-    final starred = messages
-        .where((m) => m.isStarred && m.folder != MailFolder.trash)
-        .length;
     return [
       FolderItem(
-          id: 'inbox',
-          label: 'Inbox',
-          icon: _iconInbox,
-          folder: MailFolder.inbox,
-          count: count(MailFolder.inbox)),
+          id: 'all-inboxes',
+          label: 'All Inboxes',
+          icon: const IconData(0xe88a, fontFamily: 'MaterialIcons'),
+          view: MailboxView.allInboxes,
+          count: countView(MailboxView.allInboxes)),
       FolderItem(
           id: 'starred',
           label: 'Starred',
-          icon: _iconStar,
-          folder: MailFolder.starred,
-          count: starred),
+          icon: const IconData(0xe5f9, fontFamily: 'MaterialIcons'),
+          view: MailboxView.starred,
+          count: countView(MailboxView.starred)),
       FolderItem(
-          id: 'snoozed',
-          label: 'Snoozed',
-          icon: _iconSnooze,
-          folder: MailFolder.snoozed,
-          count: count(MailFolder.snoozed)),
+          id: 'unread',
+          label: 'Unread',
+          icon: const IconData(0xe159, fontFamily: 'MaterialIcons'),
+          view: MailboxView.unread,
+          count: countView(MailboxView.unread)),
+      FolderItem(
+          id: 'inbox',
+          label: 'Inbox',
+          icon: const IconData(0xe156, fontFamily: 'MaterialIcons'),
+          view: MailboxView.inbox,
+          count: countView(MailboxView.inbox)),
       FolderItem(
           id: 'drafts',
           label: 'Drafts',
-          icon: _iconDrafts,
-          folder: MailFolder.drafts,
-          count: count(MailFolder.drafts)),
+          icon: const IconData(0xe151, fontFamily: 'MaterialIcons'),
+          view: MailboxView.drafts,
+          count: countView(MailboxView.drafts)),
       FolderItem(
           id: 'sent',
           label: 'Sent',
-          icon: _iconSent,
-          folder: MailFolder.sent,
-          count: count(MailFolder.sent)),
-      FolderItem(
-          id: 'archive',
-          label: 'Archive',
-          icon: _iconArchive,
-          folder: MailFolder.archive,
-          count: count(MailFolder.archive)),
+          icon: const IconData(0xe163, fontFamily: 'MaterialIcons'),
+          view: MailboxView.sent,
+          count: countView(MailboxView.sent)),
       FolderItem(
           id: 'spam',
           label: 'Spam',
-          icon: _iconSpam,
-          folder: MailFolder.spam,
-          count: count(MailFolder.spam)),
+          icon: const IconData(0xe002, fontFamily: 'MaterialIcons'),
+          view: MailboxView.spam,
+          count: countView(MailboxView.spam)),
       FolderItem(
           id: 'trash',
           label: 'Trash',
-          icon: _iconTrash,
-          folder: MailFolder.trash,
-          count: count(MailFolder.trash)),
+          icon: const IconData(0xe872, fontFamily: 'MaterialIcons'),
+          view: MailboxView.trash,
+          count: countView(MailboxView.trash)),
     ];
   }
 }
-
-const _iconInbox = IconData(0xe156, fontFamily: 'MaterialIcons');
-const _iconStar = IconData(0xe5f9, fontFamily: 'MaterialIcons');
-const _iconSnooze = IconData(0xe046, fontFamily: 'MaterialIcons');
-const _iconDrafts = IconData(0xe151, fontFamily: 'MaterialIcons');
-const _iconSent = IconData(0xe163, fontFamily: 'MaterialIcons');
-const _iconArchive = IconData(0xe149, fontFamily: 'MaterialIcons');
-const _iconSpam = IconData(0xe002, fontFamily: 'MaterialIcons');
-const _iconTrash = IconData(0xe872, fontFamily: 'MaterialIcons');
 
 class InboxController extends Notifier<InboxState> {
   @override
   InboxState build() {
     final messages = MockMailRepository.initialMessages();
-    final inbox = messages.where((m) => m.folder == MailFolder.inbox).toList()
+    final accounts = MockMailRepository.accounts;
+    final defaultAccount = accounts.first;
+    final inbox = messages
+        .where((m) =>
+            m.accountId == defaultAccount.id && m.folder == MailFolder.inbox)
+        .toList()
       ..sort((a, b) => b.date.compareTo(a.date));
     return InboxState(
-      account: MockMailRepository.account,
+      accounts: accounts,
       messages: messages,
-      selectedFolder: MailFolder.inbox,
+      selectedAccountId: defaultAccount.id,
+      selectedView: MailboxView.inbox,
       selectedMessageId: inbox.isNotEmpty ? inbox.first.id : null,
       selectedIds: <String>{},
       searchQuery: '',
@@ -181,9 +210,29 @@ class InboxController extends Notifier<InboxState> {
     );
   }
 
-  void selectFolder(MailFolder folder) {
-    final next =
-        state.copyWith(selectedFolder: folder, selectedIds: <String>{});
+  void selectView(MailboxView view) {
+    final next = state.copyWith(selectedView: view, selectedIds: <String>{});
+    final visible = next.visibleMessages;
+    state = next.copyWith(
+      selectedMessageId: visible.isNotEmpty ? visible.first.id : null,
+      clearSelectedMessage: visible.isEmpty,
+    );
+  }
+
+  void selectAccount(String accountId) {
+    if (accountId != allAccountsId &&
+        !state.accounts.any((a) => a.id == accountId)) {
+      return;
+    }
+    final next = state.copyWith(
+      selectedAccountId: accountId,
+      selectedIds: <String>{},
+      // When in unified mode, prefer All Inboxes for clarity.
+      selectedView: accountId == allAccountsId &&
+              state.selectedView == MailboxView.inbox
+          ? MailboxView.allInboxes
+          : state.selectedView,
+    );
     final visible = next.visibleMessages;
     state = next.copyWith(
       selectedMessageId: visible.isNotEmpty ? visible.first.id : null,
@@ -275,9 +324,7 @@ class InboxController extends Notifier<InboxState> {
     final sent = message.copyWith(
         folder: MailFolder.sent, isDraft: false, date: DateTime.now());
     saveDraft(sent);
-    if (state.selectedFolder == MailFolder.drafts) {
-      _ensureSelectedVisible();
-    }
+    _ensureSelectedVisible();
   }
 
   EmailMessage? _byId(String id) {

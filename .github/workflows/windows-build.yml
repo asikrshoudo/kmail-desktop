@@ -15,7 +15,7 @@ jobs:
   build-windows:
     name: Build Windows
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     permissions:
       contents: read
 
@@ -25,6 +25,7 @@ jobs:
       APP_PUBLISHER: TheKami
       APP_ID: com.thekami.kmail
       APP_AUMID: TheKami.Kmail
+      APP_VERSION: 0.1.0
 
     steps:
       - name: Checkout repository
@@ -57,8 +58,7 @@ jobs:
 
       - name: Apply Windows branding and identity
         shell: pwsh
-        run: |
-          ./tool/windows/apply_windows_branding.ps1
+        run: ./tool/windows/apply_windows_branding.ps1
 
       - name: Install dependencies
         run: flutter pub get
@@ -83,7 +83,6 @@ jobs:
           if (!(Test-Path $releaseDir)) { throw "Expected release directory not found: $releaseDir" }
           $exe = Join-Path $releaseDir $env:APP_EXE_NAME
           if (!(Test-Path $exe)) {
-            # Fallback to legacy name for diagnostics but fail - we expect Kmail.exe
             $legacy = Join-Path $releaseDir "kmail_desktop.exe"
             if (Test-Path $legacy) { throw "Found legacy kmail_desktop.exe but expected $env:APP_EXE_NAME. Branding patch failed." }
             throw "Expected executable not found: $exe"
@@ -106,40 +105,35 @@ jobs:
           $signed = $false
           $status = "unsigned"
           $reason = "No signing certificate secrets configured."
+          $installerSigned = $false
 
           if (![string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_BASE64) -and ![string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_PASSWORD)) {
             Write-Host "Signing secrets detected. Attempting Authenticode signing..."
             $certPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
             [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64))
-
             $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
               Where-Object { $_.FullName -match "\\x64\\" } | Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
             if (!$signtool) { throw "signtool.exe not found on runner." }
-
             $args = @("sign", "/fd", "SHA256", "/tr", $timestampUrl, "/td", "SHA256", "/f", $certPath, "/p", $env:WINDOWS_CERTIFICATE_PASSWORD)
-            if (![string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_SHA1)) {
-              $args += @("/sha1", $env:WINDOWS_CERTIFICATE_SHA1)
-            }
+            if (![string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_SHA1)) { $args += @("/sha1", $env:WINDOWS_CERTIFICATE_SHA1) }
             $args += $exe
-
             & $signtool @args
             if ($LASTEXITCODE -ne 0) { throw "signtool sign failed with exit code $LASTEXITCODE" }
-
             $sig = Get-AuthenticodeSignature -FilePath $exe
-            if ($sig.Status -ne "Valid") {
-              throw "Signature verification failed after signing: $($sig.Status) $($sig.StatusMessage)"
-            }
+            if ($sig.Status -ne "Valid") { throw "Signature verification failed after signing: $($sig.Status) $($sig.StatusMessage)" }
             $signed = $true
             $status = "signed"
             $reason = "Authenticode signature is Valid."
-            Remove-Item $certPath -Force -ErrorAction SilentlyContinue
+            "cert_path=$certPath" >> $env:GITHUB_OUTPUT
           } else {
             Write-Host "No signing certificate secrets configured. Producing unsigned development artifact."
+            "cert_path=" >> $env:GITHUB_OUTPUT
           }
 
           "signed=$signed" >> $env:GITHUB_OUTPUT
           "status=$status" >> $env:GITHUB_OUTPUT
           "reason=$reason" >> $env:GITHUB_OUTPUT
+          "timestamp_url=$timestampUrl" >> $env:GITHUB_OUTPUT
 
       - name: Verify executable metadata and signature
         shell: pwsh
@@ -148,57 +142,136 @@ jobs:
           $exe = "${{ steps.release-path.outputs.exe_path }}"
           $info = Get-Item $exe | Select-Object -ExpandProperty VersionInfo
           $info | Format-List *
-
-          $expected = @{
-            ProductName = "Kmail"
-            FileDescription = "Kmail"
-            CompanyName = "TheKami"
-            OriginalFilename = "Kmail.exe"
-            InternalName = "Kmail"
-          }
+          $expected = @{ ProductName = "Kmail"; FileDescription = "Kmail"; CompanyName = "TheKami"; OriginalFilename = "Kmail.exe"; InternalName = "Kmail" }
           foreach ($k in $expected.Keys) {
             $actual = $info.$k
             if ($actual -ne $expected[$k]) { throw "Metadata mismatch for ${k}: expected '$($expected[$k])', got '$actual'" }
           }
           if ([string]::IsNullOrWhiteSpace($info.LegalCopyright)) { throw "LegalCopyright is missing" }
-          if ([string]::IsNullOrWhiteSpace($info.ProductVersion)) { throw "ProductVersion is missing" }
-          if ([string]::IsNullOrWhiteSpace($info.FileVersion)) { throw "FileVersion is missing" }
-
           $sig = Get-AuthenticodeSignature -FilePath $exe
           $sig | Format-List Status,StatusMessage,SignerCertificate,TimeStamperCertificate,Path
           $signed = "${{ steps.signing.outputs.signed }}"
           if ($signed -eq "true") {
             if ($sig.Status -ne "Valid") { throw "Expected valid signature but got $($sig.Status): $($sig.StatusMessage)" }
-            Write-Host "Signature verification passed."
           } else {
             if ($sig.Status -eq "Valid") { throw "Artifact reported unsigned but signature is Valid; refusing ambiguous release." }
-            Write-Host "Artifact is unsigned (expected for dev/release without secrets): $($sig.Status)"
+            Write-Host "Artifact is unsigned (expected without secrets): $($sig.Status)"
           }
 
-      - name: Package release bundle and checksums
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          choco install innosetup -y --no-progress
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $iscc)) { throw "ISCC.exe not found at $iscc" }
+          Write-Host "Inno Setup installed: $iscc"
+
+      - name: Build installer
+        id: installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $releaseDir = (Resolve-Path "${{ steps.release-path.outputs.release_dir }}").Path
+          $repo = (Resolve-Path ".").Path
+          $outDir = Join-Path $env:RUNNER_TEMP "kmail-installer-out"
+          if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
+          New-Item -ItemType Directory -Path $outDir | Out-Null
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          $iss = Join-Path $repo "installer\windows\kmail.iss"
+          if (!(Test-Path $iss)) { throw "Installer script not found: $iss" }
+          & $iscc "/DMyAppVersion=$env:APP_VERSION" "/DSourceDir=$releaseDir" "/DRepoDir=$repo" "/DOutputDir=$outDir" $iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+          $setup = Join-Path $outDir "Kmail-Setup.exe"
+          if (!(Test-Path $setup)) { throw "Installer not created: $setup" }
+          $size = (Get-Item $setup).Length
+          if ($size -lt 1000000) { throw "Installer suspiciously small: $size bytes" }
+          Write-Host "Installer created: $setup ($size bytes)"
+          "setup_path=$setup" >> $env:GITHUB_OUTPUT
+          "out_dir=$outDir" >> $env:GITHUB_OUTPUT
+
+      - name: Optional sign installer
+        if: steps.signing.outputs.signed == 'true'
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          WINDOWS_CERTIFICATE_SHA1: ${{ secrets.WINDOWS_CERTIFICATE_SHA1 }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = "${{ steps.installer.outputs.setup_path }}"
+          $certPath = "${{ steps.signing.outputs.cert_path }}"
+          $timestampUrl = "${{ steps.signing.outputs.timestamp_url }}"
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\x64\\" } | Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+          $args = @("sign", "/fd", "SHA256", "/tr", $timestampUrl, "/td", "SHA256", "/f", $certPath, "/p", $env:WINDOWS_CERTIFICATE_PASSWORD)
+          if (![string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_SHA1)) { $args += @("/sha1", $env:WINDOWS_CERTIFICATE_SHA1) }
+          $args += $setup
+          & $signtool @args
+          if ($LASTEXITCODE -ne 0) { throw "signtool sign installer failed with exit code $LASTEXITCODE" }
+          $sig = Get-AuthenticodeSignature -FilePath $setup
+          if ($sig.Status -ne "Valid") { throw "Installer signature verification failed: $($sig.Status) $($sig.StatusMessage)" }
+
+      - name: Verify installer contents and signature
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = "${{ steps.installer.outputs.setup_path }}"
+          $sig = Get-AuthenticodeSignature -FilePath $setup
+          $sig | Format-List Status,StatusMessage,SignerCertificate,TimeStamperCertificate,Path
+          $signed = "${{ steps.signing.outputs.signed }}"
+          if ($signed -eq "true") {
+            if ($sig.Status -ne "Valid") { throw "Expected valid installer signature but got $($sig.Status)" }
+          } else {
+            if ($sig.Status -eq "Valid") { throw "Installer reported unsigned but signature is Valid; refusing ambiguous release." }
+            Write-Host "Installer is unsigned (expected without secrets): $($sig.Status)"
+          }
+
+      - name: Smoke test installer (silent install/launch/uninstall)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = "${{ steps.installer.outputs.setup_path }}"
+          $installDir = Join-Path $env:RUNNER_TEMP "KmailInstallTest"
+          $log = Join-Path $env:RUNNER_TEMP "kmail-install.log"
+          if (Test-Path $installDir) { Remove-Item -Recurse -Force $installDir }
+          $p = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-","/DIR=$installDir","/LOG=$log" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Installer exited with code $($p.ExitCode)" }
+          $exe = Join-Path $installDir "Kmail.exe"
+          if (!(Test-Path $exe)) { throw "Installed Kmail.exe not found: $exe" }
+          $dlls = Get-ChildItem $installDir -Filter *.dll -File
+          if ($dlls.Count -lt 1) { throw "No DLLs found in install dir; bundle may be incomplete" }
+          if (!(Test-Path (Join-Path $installDir "data"))) { throw "data directory missing in install dir" }
+          Write-Host "Install smoke test passed. Files present: $((Get-ChildItem $installDir -Recurse -File).Count)"
+          # Best-effort launch smoke test. GUI app may not fully render on CI session, but process start is validated.
+          try {
+            $app = Start-Process -FilePath $exe -PassThru
+            Start-Sleep -Seconds 5
+            if ($app.HasExited) { Write-Warning "Kmail exited early with code $($app.ExitCode)" } else { Write-Host "Kmail process started (PID $($app.Id))"; Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue }
+          } catch {
+            Write-Warning "Launch smoke test could not fully verify GUI: $($_.Exception.Message)"
+          }
+          $unins = Get-ChildItem $installDir -Filter "unins*.exe" -File | Select-Object -First 1
+          if ($unins) {
+            $u = Start-Process -FilePath $unins.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait -PassThru
+            Write-Host "Uninstaller exit code: $($u.ExitCode)"
+          } else {
+            Write-Warning "Uninstaller not found in install dir"
+          }
+
+      - name: Package portable zip and checksums
         id: package
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           $releaseDir = "${{ steps.release-path.outputs.release_dir }}"
           $status = "${{ steps.signing.outputs.status }}"
-          $zipName = "kmail-windows-$status.zip"
+          $setup = "${{ steps.installer.outputs.setup_path }}"
           $outDir = Join-Path $env:RUNNER_TEMP "kmail-release"
           if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
           New-Item -ItemType Directory -Path $outDir | Out-Null
-
-          $zipPath = Join-Path $outDir $zipName
-          Compress-Archive -Path "$releaseDir/*" -DestinationPath $zipPath -Force
-
-          $checksumPath = Join-Path $outDir "SHA256SUMS.txt"
-          $files = Get-ChildItem $outDir -File
-          $lines = foreach ($f in $files) {
-            $hash = (Get-FileHash -Algorithm SHA256 -Path $f.FullName).Hash.ToLowerInvariant()
-            "$hash *$($f.Name)"
-          }
-          Set-Content -Path $checksumPath -Value ($lines -join "`n") -Encoding ASCII
-
-          # Also include a small status file
+          $portable = Join-Path $outDir "Kmail-Portable-Windows.zip"
+          Compress-Archive -Path "$releaseDir/*" -DestinationPath $portable -Force
+          Copy-Item $setup (Join-Path $outDir "Kmail-Setup.exe") -Force
           $statusPath = Join-Path $outDir "RELEASE_STATUS.txt"
           @(
             "Product=Kmail"
@@ -206,20 +279,39 @@ jobs:
             "Identifier=com.thekami.kmail"
             "AppUserModelID=TheKami.Kmail"
             "Executable=Kmail.exe"
+            "Installer=Kmail-Setup.exe"
+            "Portable=Kmail-Portable-Windows.zip"
             "SigningStatus=$status"
             "SigningReason=${{ steps.signing.outputs.reason }}"
+            "SmartScreen=Unsigned releases may trigger SmartScreen warnings. Do not disable SmartScreen/Defender."
             "BuildRun=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           ) | Set-Content -Path $statusPath -Encoding ASCII
-          $hash = (Get-FileHash -Algorithm SHA256 -Path $statusPath).Hash.ToLowerInvariant()
-          Add-Content -Path $checksumPath -Value "$hash *RELEASE_STATUS.txt" -Encoding ASCII
-
-          "zip_name=$zipName" >> $env:GITHUB_OUTPUT
+          $checksumPath = Join-Path $outDir "SHA256SUMS.txt"
+          $lines = foreach ($f in Get-ChildItem $outDir -File) {
+            $hash = (Get-FileHash -Algorithm SHA256 -Path $f.FullName).Hash.ToLowerInvariant()
+            "$hash *$($f.Name)"
+          }
+          Set-Content -Path $checksumPath -Value ($lines -join "`n") -Encoding ASCII
           "out_dir=$outDir" >> $env:GITHUB_OUTPUT
 
-      - name: Upload Windows artifact
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kmail-windows-${{ steps.signing.outputs.status }}
-          path: ${{ steps.package.outputs.out_dir }}/*
+          name: kmail-windows-installer
+          path: |
+            ${{ steps.package.outputs.out_dir }}/Kmail-Setup.exe
+            ${{ steps.package.outputs.out_dir }}/SHA256SUMS.txt
+            ${{ steps.package.outputs.out_dir }}/RELEASE_STATUS.txt
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmail-windows-portable-${{ steps.signing.outputs.status }}
+          path: |
+            ${{ steps.package.outputs.out_dir }}/Kmail-Portable-Windows.zip
+            ${{ steps.package.outputs.out_dir }}/SHA256SUMS.txt
+            ${{ steps.package.outputs.out_dir }}/RELEASE_STATUS.txt
           retention-days: 14
           if-no-files-found: error

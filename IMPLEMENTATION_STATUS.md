@@ -1,51 +1,28 @@
 # Implementation Status
 
 ## Legend
-
 - **Implemented**: present in code.
-- **Mock/Local**: implemented with in-memory/mock behavior, no real network/service.
+- **Mock/Local**: in-memory/mock behavior, no real network/service.
 - **Planned**: not implemented.
-- **Blocked/Not verified**: cannot be verified in this environment (no local Flutter SDK).
+- **Blocked/Not verified**: requires GitHub Actions or external credentials.
 
-## Phase 1 checklist
+## Current status
 
 | Area | Status | Notes |
 |---|---|---|
-| Flutter Windows project structure | Implemented | `pubspec`, `lib`, `test`, `windows` scaffolding expected on CI; workflow can generate `windows/` if missing. |
-| Custom Material 3 design system | Implemented | Light/dark themes, semantic tokens, density, motion, blur toggle, text scale. |
-| Desktop app shell | Implemented | Toolbar, sidebar, three-pane layout, responsive compact handling. |
-| Mock email data | Mock/Local | 20+ realistic messages with varied types, labels, attachments, HTML/plain, malformed/suspicious HTML case. |
-| Folder navigation | Mock/Local | Inbox/Starred/Snoozed/Drafts/Sent/Archive/Spam/Trash. |
-| Search/filter/sort | Mock/Local | Search sender/subject/preview/body; unread/attachments filters; newest/oldest sort. |
-| Selection/bulk actions | Mock/Local | Select visible, per-row checkbox, mark read/unread, archive, delete. |
-| Star/read/archive/delete | Mock/Local | Updates in-memory state. |
-| Reader | Implemented/Mock | Metadata, actions, sanitized HTML rendering, remote-image control, attachments. |
-| Compose/reply/forward/draft | Mock/Local | Simulated send; local draft in app state; unsaved-close confirmation. |
-| HTML sanitization | Implemented | Removes scripts/unsafe tags/handlers/unsafe URLs; remote image blocking. |
-| Attachment preview | Implemented/Mock | Image mock, text/CSV, sanitized HTML; unsupported/PDF fallback. |
-| Settings persistence | Implemented | `shared_preferences` for theme/density/motion/blur/remote images/text scale. |
-| Unit/widget tests | Implemented | Added sanitizer, inbox controller, app smoke tests. Not run locally (no Flutter SDK). |
-| GitHub Actions Windows build | Implemented | Workflow builds, tests, applies Windows branding, verifies metadata/signature state, packages checksums, and uploads signed/unsigned artifact. Latest verification: successful unsigned dev artifact run. |
-| Windows identity/branding/signing prep | Implemented (partial) | Kmail/TheKami identity, icon, AUMID, metadata, optional Authenticode signing pipeline, and docs added. No public signing cert configured; artifact unsigned until secrets provided. |
-| Docs | Implemented | Required Phase 1 docs plus WINDOWS_SIGNING.md added/updated. |
-
-## Deferred to Phase 2+
-
-- Real IMAP/SMTP/Gmail integration and OAuth
-- Secure credential storage / OS secret integration
-- Drift/SQLite local mail database and sync
-- Real MIME parsing, attachment save/open, downloads
-- Desktop notifications
-- Account import/export (`.kmail`) compatibility
-- Full PDF renderer integration verified on Windows
-- Linux/macOS CI/release pipelines
-- Accessibility audit and performance profiling on real hardware
+| Flutter Windows app foundation | Implemented | Material 3 desktop shell, mock mail data, reader/compose/settings, sanitization, tests. |
+| Windows identity/branding | Implemented | Kmail/TheKami, `com.thekami.kmail`, AUMID `TheKami.Kmail`, `Kmail.exe`, official logo converted to ICO and applied by CI script. |
+| Inno Setup installer | Implemented (CI) | `installer/windows/kmail.iss` generates `Kmail-Setup.exe` on GitHub Actions; Start Menu/Desktop shortcuts, uninstall entry, user-data-preserving uninstall default. CI runs silent install smoke test. |
+| Portable ZIP | Implemented (CI) | `Kmail-Portable-Windows.zip` uploaded as separate artifact. |
+| Authenticode signing | Optional/Blocked | Signs EXE and installer only when valid secrets are configured. No cert configured; unsigned artifacts clearly labeled. SmartScreen warnings may still appear. |
+| Multi-account mock | Mock/Local | Two mock accounts, account switcher, All Inboxes unified view, account-scoped folder counts, accountId isolation in state. No real add/remove/auth. |
+| Required mailbox views | Mock/Local | All Inboxes, Starred, Unread, Inbox, Drafts, Sent, Spam, Trash wired in controller/sidebar/counts. |
+| Core mail actions | Mock/Local | Search, filter/sort, select, star, read/unread, archive, delete, compose/reply/forward/save draft/send mock. |
+| Security | Implemented | HTML sanitization, remote image blocking, safe link confirmation, no secrets committed, no SmartScreen/Defender bypass. |
+| GitHub Actions verification | Blocked pending run | Local Flutter/Dart unavailable; CI is authoritative. |
 
 ## Known limitations
-
-- No local Flutter SDK in this environment; formatting/analyze/test/build not locally executed.
-- Mock data only; actions do not persist across restart except settings.
-- PDF preview is fallback-only until a Windows-compatible renderer is verified in CI.
-- HTML rendering uses `flutter_html`; complex email CSS/layout fidelity may vary and must be validated in cloud build/runtime artifact.
-- Compose formatting toolbar is UI foundation only (no rich-text editing engine).
-- No end-to-end cloud build verification yet in this report.
+- No real IMAP/SMTP/Gmail/OAuth, no credential vault, no local DB/sync.
+- Add/remove account and real connection state are planned.
+- Unsigned public builds may trigger SmartScreen; legitimate signing/reputation needed.
+- PDF preview fallback in Phase 1.

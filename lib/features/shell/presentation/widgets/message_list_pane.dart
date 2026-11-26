@@ -21,26 +21,25 @@ class MessageListPane extends ConsumerWidget {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: 12 * density),
-          decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: colors.divider))),
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12 * density),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: colors.divider))),
           child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_folderTitle(inbox.selectedFolder),
-                        style: Theme.of(context).textTheme.titleMedium),
-                    Text('${messages.length} messages • Mock data',
-                        style: Theme.of(context).textTheme.bodySmall),
+                    Text(_viewTitle(inbox.selectedView), style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      '${messages.length} messages • ${inbox.isUnified ? 'All accounts' : (inbox.activeAccount?.email ?? 'Account')} • Mock data',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
               if (inbox.selectedIds.isNotEmpty)
-                Text('${inbox.selectedIds.length} selected',
-                    style: Theme.of(context).textTheme.labelMedium),
+                Text('${inbox.selectedIds.length} selected', style: Theme.of(context).textTheme.labelMedium),
             ],
           ),
         ),
@@ -49,8 +48,7 @@ class MessageListPane extends ConsumerWidget {
               ? _EmptyList(searching: inbox.searchQuery.isNotEmpty)
               : ListView.separated(
                   itemCount: messages.length,
-                  separatorBuilder: (_, __) =>
-                      Divider(height: 1, color: colors.divider),
+                  separatorBuilder: (_, __) => Divider(height: 1, color: colors.divider),
                   itemBuilder: (context, index) {
                     final message = messages[index];
                     return _MessageRow(
@@ -58,6 +56,8 @@ class MessageListPane extends ConsumerWidget {
                       selected: inbox.selectedMessageId == message.id,
                       checked: inbox.selectedIds.contains(message.id),
                       density: density,
+                      showAccount: inbox.isUnified,
+                      accountLabel: _accountLabel(inbox, message.accountId),
                     );
                   },
                 ),
@@ -66,40 +66,50 @@ class MessageListPane extends ConsumerWidget {
     );
   }
 
-  String _folderTitle(MailFolder folder) {
-    switch (folder) {
-      case MailFolder.inbox:
-        return 'Inbox';
-      case MailFolder.starred:
+  String _accountLabel(InboxState inbox, String accountId) {
+    for (final a in inbox.accounts) {
+      if (a.id == accountId) return a.email;
+    }
+    return accountId;
+  }
+
+  String _viewTitle(MailboxView view) {
+    switch (view) {
+      case MailboxView.allInboxes:
+        return 'All Inboxes';
+      case MailboxView.starred:
         return 'Starred';
-      case MailFolder.snoozed:
-        return 'Snoozed';
-      case MailFolder.drafts:
+      case MailboxView.unread:
+        return 'Unread';
+      case MailboxView.inbox:
+        return 'Inbox';
+      case MailboxView.drafts:
         return 'Drafts';
-      case MailFolder.sent:
+      case MailboxView.sent:
         return 'Sent';
-      case MailFolder.archive:
-        return 'Archive';
-      case MailFolder.spam:
+      case MailboxView.spam:
         return 'Spam';
-      case MailFolder.trash:
+      case MailboxView.trash:
         return 'Trash';
-      case MailFolder.custom:
-        return 'Folder';
     }
   }
 }
 
 class _MessageRow extends ConsumerWidget {
-  const _MessageRow(
-      {required this.message,
-      required this.selected,
-      required this.checked,
-      required this.density});
+  const _MessageRow({
+    required this.message,
+    required this.selected,
+    required this.checked,
+    required this.density,
+    required this.showAccount,
+    required this.accountLabel,
+  });
   final EmailMessage message;
   final bool selected;
   final bool checked;
   final double density;
+  final bool showAccount;
+  final String accountLabel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -112,20 +122,15 @@ class _MessageRow extends ConsumerWidget {
       onTap: () => controller.selectMessage(message.id),
       child: Container(
         color: bg,
-        padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm, vertical: 10 * density),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 10 * density),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Checkbox(
-                value: checked,
-                onChanged: (_) => controller.toggleSelected(message.id)),
+            Checkbox(value: checked, onChanged: (_) => controller.toggleSelected(message.id)),
             CircleAvatar(
               radius: 17,
               backgroundColor: colors.surfaceMuted,
-              child: Text(
-                  message.sender.name.isNotEmpty ? message.sender.name[0] : '?',
-                  style: TextStyle(color: colors.textPrimary)),
+              child: Text(message.sender.name.isNotEmpty ? message.sender.name[0] : '?', style: TextStyle(color: colors.textPrimary)),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -139,12 +144,7 @@ class _MessageRow extends ConsumerWidget {
                           message.sender.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: message.isUnread
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
-                                  ),
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: message.isUnread ? FontWeight.w700 : FontWeight.w600),
                         ),
                       ),
                       Text(date, style: Theme.of(context).textTheme.bodySmall),
@@ -158,49 +158,30 @@ class _MessageRow extends ConsumerWidget {
                           message.subject,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: message.isUnread
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: message.isUnread ? FontWeight.w600 : FontWeight.w400),
                         ),
                       ),
                       if (message.hasAttachments)
-                        Icon(Icons.attach_file_rounded,
-                            size: 16, color: colors.textSecondary),
+                        Icon(Icons.attach_file_rounded, size: 16, color: colors.textSecondary),
                       IconButton(
                         tooltip: message.isStarred ? 'Unstar' : 'Star',
                         visualDensity: VisualDensity.compact,
                         onPressed: () => controller.toggleStar(message.id),
-                        icon: Icon(
-                            message.isStarred
-                                ? Icons.star_rounded
-                                : Icons.star_border_rounded,
-                            size: 18,
-                            color: message.isStarred
-                                ? colors.warning
-                                : colors.textSecondary),
+                        icon: Icon(message.isStarred ? Icons.star_rounded : Icons.star_border_rounded, size: 18, color: message.isStarred ? colors.warning : colors.textSecondary),
                       ),
                     ],
                   ),
-                  Text(
-                    message.preview,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text(message.preview, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+                  if (showAccount)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(accountLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colors.textSecondary)),
+                    ),
                 ],
               ),
             ),
             if (message.isUnread)
-              Container(
-                margin: const EdgeInsets.only(left: 6, top: 8),
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                    color: colors.primary, shape: BoxShape.circle),
-              ),
+              Container(margin: const EdgeInsets.only(left: 6, top: 8), width: 8, height: 8, decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle)),
           ],
         ),
       ),
@@ -221,19 +202,12 @@ class _EmptyList extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(searching ? Icons.search_off_rounded : Icons.inbox_outlined,
-                size: 42, color: colors.textSecondary),
+            Icon(searching ? Icons.search_off_rounded : Icons.inbox_outlined, size: 42, color: colors.textSecondary),
             const SizedBox(height: 12),
-            Text(
-                searching
-                    ? 'No messages match your search'
-                    : 'No messages in this folder',
-                style: Theme.of(context).textTheme.titleSmall),
+            Text(searching ? 'No messages match your search' : 'No messages in this view', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 6),
             Text(
-              searching
-                  ? 'Try a different keyword or clear filters.'
-                  : 'Messages you receive or move will appear here.',
+              searching ? 'Try a different keyword or clear filters.' : 'Messages in this account/folder will appear here.',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
