@@ -237,7 +237,7 @@ jobs:
           $installDir = Join-Path $env:RUNNER_TEMP "KmailInstallTest"
           $log = Join-Path $env:RUNNER_TEMP "kmail-install.log"
           if (Test-Path $installDir) { Remove-Item -Recurse -Force $installDir }
-          $p = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-","/DIR=$installDir","/LOG=$log" -Wait -PassThru
+          $p = Start-Process -FilePath $setup -ArgumentList @("/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/SP-","/CURRENTUSER","/DIR=$installDir","/LOG=$log") -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "Installer exited with code $($p.ExitCode)" }
           $exe = Join-Path $installDir "Kmail.exe"
           if (!(Test-Path $exe)) { throw "Installed Kmail.exe not found: $exe" }
@@ -255,7 +255,7 @@ jobs:
           }
           $unins = Get-ChildItem $installDir -Filter "unins*.exe" -File | Select-Object -First 1
           if ($unins) {
-            $u = Start-Process -FilePath $unins.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait -PassThru
+            $u = Start-Process -FilePath $unins.FullName -ArgumentList @("/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/CURRENTUSER") -Wait -PassThru
             Write-Host "Uninstaller exit code: $($u.ExitCode)"
           } else {
             Write-Warning "Uninstaller not found in install dir"
@@ -318,4 +318,5 @@ jobs:
             ${{ steps.package.outputs.out_dir }}/RELEASE_STATUS.txt
           retention-days: 14
           if-no-files-found: error
+
 

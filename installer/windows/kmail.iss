@@ -36,8 +36,6 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ; Behavior
 CloseApplications=yes
-; Do not delete user data on uninstall by default
-UninstallDeleteUninstallRegKey=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -64,3 +62,5 @@ function InitializeSetup(): Boolean;
 begin
   Result := True;
 end;
+
+
