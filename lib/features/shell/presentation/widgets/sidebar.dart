@@ -152,7 +152,8 @@ class _SidebarItem extends StatelessWidget {
           selected: selected,
           selectedTileColor: Colors.transparent,
           leading: Icon(item.icon,
-              size: 20, color: selected ? colors.primary : colors.textSecondary),
+              size: 20,
+              color: selected ? colors.primary : colors.textSecondary),
           title: Text(item.label),
           trailing: item.count > 0
               ? Container(
