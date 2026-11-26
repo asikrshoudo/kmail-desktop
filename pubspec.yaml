@@ -1,0 +1,30 @@
+name: kmail_desktop
+description: Kmail Desktop - a premium, privacy-focused desktop email client foundation.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  window_manager: ^0.4.3
+  collection: ^1.18.0
+  intl: ^0.19.0
+  shared_preferences: ^2.3.3
+  flutter_html: ^3.0.0-beta.2
+  url_launcher: ^6.3.1
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/sample_attachments/

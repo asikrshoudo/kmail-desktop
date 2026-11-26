@@ -1,0 +1,2 @@
+Kmail sample attachment preview.
+This is a safe text preview.

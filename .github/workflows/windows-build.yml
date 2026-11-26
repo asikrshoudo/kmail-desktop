@@ -1,0 +1,81 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Ensure Windows platform files
+        shell: pwsh
+        run: |
+          if (!(Test-Path "windows/CMakeLists.txt")) {
+            Write-Host "Generating Windows platform scaffolding in temp directory..."
+            $tmp = Join-Path $env:RUNNER_TEMP "kmail_flutter_tmp"
+            if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
+            flutter create --platforms=windows --project-name kmail_desktop --org com.thekami $tmp
+            if (!(Test-Path "windows")) { New-Item -ItemType Directory -Path "windows" | Out-Null }
+            Copy-Item -Path (Join-Path $tmp "windows/*") -Destination "windows" -Recurse -Force
+            if (!(Test-Path ".metadata")) { Copy-Item (Join-Path $tmp ".metadata") ".metadata" -Force }
+          }
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Archive release bundle
+        shell: pwsh
+        run: |
+          $releaseDir = "build/windows/x64/runner/Release"
+          if (!(Test-Path $releaseDir)) {
+            throw "Expected release directory not found: $releaseDir"
+          }
+          Compress-Archive -Path "$releaseDir/*" -DestinationPath "kmail-windows-release.zip" -Force
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmail-windows-release
+          path: kmail-windows-release.zip
+          retention-days: 14
+          if-no-files-found: error

@@ -1,0 +1,483 @@
+KMAIL ANDROID COMPLETE SOURCE AUDIT
+
+Repository root: D:\shoudo\kmail
+Audit date: 2026-11-26
+Branch during audit: main
+Working-tree state before these planning files were created: git status --short returned no output.
+
+METHOD AND SCOPE
+
+This audit is read-only. Source, Gradle files, resources, tests, git history, and build outputs were not modified. No build, device run, or external URL validation was performed. No credentials, passphrase values, token values, private keys, personal email addresses, or secret constant values are reproduced. Evidence citations are repository-relative file:line references.
+
+STATUS LEGEND
+
+IMPLEMENTED — VERIFIED IN SOURCE
+The behavior or artifact is directly observable in the cited source.
+
+PARTIALLY IMPLEMENTED
+Present but incomplete, stale, gated, or with observable gaps.
+
+PLANNED / NOT IMPLEMENTED
+Explicitly absent in source or documented only as future work.
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+No source evidence was found; status remains unknown.
+
+OWNER CONFIRMATION REQUIRED
+Source and documentation disagree, or a product/legal decision is not evidenced in source.
+
+--------------------------------------------------------------------------------
+1. PRODUCT IDENTITY AND DOCUMENTATION STATUS
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Kmail is an independent, privacy-focused Android email client by TheKami. It connects to existing IMAP/SMTP accounts and is not a hosting service. [README.md:3-4]
+- Declared stack: Kotlin, Jetpack Compose, Material 3; local-first positioning; package com.kmail.thekami. [README.md:6-8]
+- License is GPLv3. [README.md:20-22; LICENSE:1-2]
+- Single Gradle module :app; root project name Kmail. [settings.gradle.kts:29-30]
+
+PARTIALLY IMPLEMENTED / DOCUMENTATION CONFLICT
+
+- README status says "Early development (Phase 1, foundation). Not usable as a mail client yet." [README.md:10-13]
+- docs/PROGRESS.md documents implementation through step 13.1 [docs/PROGRESS.md:220-231], and the source contains setup, sync, reader, composer, drafts, settings, transfer, and lock implementations cited throughout this audit. The README status is stale. Classification: PARTIALLY IMPLEMENTED (documentation conflict).
+- README says every push to main publishes a GitHub pre-release. [README.md:15-18] The workflow creates a GitHub release with --latest and no --prerelease flag. [.github/workflows/release.yml:146-173] Classification: PARTIALLY IMPLEMENTED (documentation conflict).
+- docs/DECISIONS.md contains two signing/versioning sections with contradictory release triggers and tag formats. [docs/DECISIONS.md:35-47] Source workflow is authoritative: push to main and workflow_dispatch only, tag kmail-vX.Y.Z. [.github/workflows/release.yml:3-6,97-98,146-173]
+
+--------------------------------------------------------------------------------
+2. BUILD, TOOLCHAIN, AND DEPENDENCIES
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Plugins declared: android.application, kotlin.compose, ksp, hilt, room. [app/build.gradle.kts:3-9]
+- Version source is version.properties with MAJOR.MINOR.PATCH, each part 0..99. [app/build.gradle.kts:11-20; version.properties:1]
+- namespace/applicationId com.kmail.thekami; compileSdk 37; minSdk 26; targetSdk 37. [app/build.gradle.kts:22-32]
+- versionCode = major*10000 + minor*100 + patch; versionName from the three parts. [app/build.gradle.kts:30-31]
+- Java 17 source/target; Compose enabled. [app/build.gradle.kts:63-70]
+- localeFilters en,de,ja,bn,hi,ar,ko. [app/build.gradle.kts:34-36]
+- Release signing config is created only when KMAIL_KEYSTORE_PATH is present; passwords and alias are read from environment variables, never literals. [app/build.gradle.kts:38-53]
+- Room schema output directory is configured. [app/build.gradle.kts:112-114]
+- Dependencies include Compose BOM/UI/Foundation/Material3/icons, core-ktx, appcompat, activity-compose, navigation-compose, lifecycle, Hilt, coroutines, jsoup, biometric, WorkManager, Room, Jakarta Mail API, Angus Mail/Activation, ZXing, CameraX, Play Services Auth, and AndroidX Browser. KSP processors are Hilt and Room. [app/build.gradle.kts:73-105]
+- Test-only dependencies are JUnit 4, coroutines-test, and orgjson. No androidTestImplementation dependencies are declared. [app/build.gradle.kts:107-109]
+- Catalog versions: AGP 9.5.1, Kotlin 2.3.21, KSP 2.3.13, Hilt 2.60.1, Room 2.8.5, Compose BOM 2026.09.00, Coroutines 1.11.0, jsoup 1.23.1, lifecycle 2.11.0, Work 2.10.0, Biometric 1.1.0, ZXing 3.5.4, CameraX 1.6.2, Play Services Auth 22.0.0, Browser 1.8.0, Jakarta Mail 2.1.5, Angus Mail 2.0.5. [gradle/libs.versions.toml:1-69]
+
+PARTIALLY IMPLEMENTED / NOT VERIFIED
+
+- No Gradle wrapper is committed; gradle/ contains only libs.versions.toml. CI installs Gradle 9.6.0 via gradle/actions/setup-gradle. [settings.gradle.kts:1-13; .github/workflows/release.yml:28-31; directory enumeration of gradle/]
+- No schemas/1.json was found even though schema export is configured. [app/build.gradle.kts:112-114; docs/PROGRESS.md:22]
+- KSP 2.3.13 and Kotlin Compose plugin 2.3.21 are pinned, but effective compatibility is not verified by source. [gradle/libs.versions.toml:3-4; docs/PROGRESS.md:21] Classification: NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+- No app/debug.keystore was found although docs/DECISIONS.md:36 claims one exists. Classification: NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+
+--------------------------------------------------------------------------------
+3. MANIFEST, PERMISSIONS, AND PLATFORM CONFIGURATION
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Permissions: INTERNET, CAMERA, READ_CONTACTS, POST_NOTIFICATIONS. Camera hardware is optional. [app/src/main/AndroidManifest.xml:4-8]
+- Application flags: allowBackup=false, dataExtractionRules, localeConfig, networkSecurityConfig, supportsRtl=true, enableOnBackInvokedCallback=true. [AndroidManifest.xml:10-21]
+- One exported MainActivity with MAIN/LAUNCHER filter; AppLocalesMetadataHolderService is disabled and non-exported. [AndroidManifest.xml:23-40]
+- Cleartext traffic is disabled globally. [res/xml/network_security_config.xml:2-4]
+- Cloud backup and device transfer exclude root, file, database, sharedpref, and external domains. [res/xml/data_extraction_rules.xml:3-16]
+- Seven locales are declared. [res/xml/locales_config.xml:3-9]
+
+PARTIALLY IMPLEMENTED / NOT VERIFIED
+
+- Runtime request sites exist for CAMERA [ui/setup/ScanScreen.kt:55-61], READ_CONTACTS [ui/compose/ComposeScreen.kt:108-109; data/contacts/ContactSuggester.kt:44-49], and POST_NOTIFICATIONS [ui/nav/KmailNavHost.kt:251-257; sync/AndroidMailNotifier.kt:34-39].
+- No certificate pinning, custom trust anchors, debug network override, or default-notification-icon metadata was found. Classification: NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+- docs/PROGRESS.md:12 claims eight locales; source declares seven. Classification: PARTIALLY IMPLEMENTED (documentation conflict).
+
+--------------------------------------------------------------------------------
+4. APPLICATION ENTRY, NAVIGATION, AND ROUTES
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- KmailApp is a Hilt Application and applies SyncScheduler at startup. [KmailApp.kt:8-15]
+- MainActivity is AppCompat-based, enables edge-to-edge, wraps KmailNavHost, applies stored appearance, and gates content behind App Lock when enabled. [MainActivity.kt:1-102]
+- Routes: HOME, WELCOME, CREDENTIALS, SCAN, GOOGLE, INCOMING, OUTGOING, CONNECTING, CONNECTED, SETTINGS, DRAFTS, READER/{messageId}, COMPOSE/{mode}/{messageId}?draft={draft}. [ui/nav/Routes.kt:3-22]
+- AppStartViewModel chooses HOME when any account exists, otherwise WELCOME. [ui/nav/AppStartViewModel.kt:15-23]
+- KmailNavHost maps WELCOME to CREDENTIALS as the actual start destination. [ui/nav/KmailNavHost.kt:61-75]
+- Route-specific enter/exit transitions respect reduced motion. [ui/nav/KmailNavHost.kt:67-75]
+- Notification permission is requested once on first Home display on API 33+. [ui/nav/KmailNavHost.kt:248-258]
+
+PARTIALLY IMPLEMENTED
+
+- No composable(Routes.WELCOME) was found in KmailNavHost; the WELCOME route is only an AppStart sentinel redirected to CREDENTIALS. ui/setup/WelcomeScreen.kt exists but has no reference from the active navigation graph. Classification: PARTIALLY IMPLEMENTED (unreachable screen/dead route). [Routes.kt:5; KmailNavHost.kt:61-75; repository search]
+
+--------------------------------------------------------------------------------
+5. SCREEN AND FEATURE INVENTORY
+--------------------------------------------------------------------------------
+
+All items below are IMPLEMENTED — VERIFIED IN SOURCE unless explicitly marked otherwise. Runtime/device correctness is NOT VERIFIED — SOURCE EVIDENCE NOT FOUND where noted.
+
+5.1 Setup / Credentials screen
+
+- Entry composable exposes email/password changes, continue, Google sign-in, QR scan, and file import callbacks. [ui/setup/CredentialsScreen.kt:92-100]
+- Provider chooser offers Google and other mail providers, help, and "other ways" dialog with Scan QR code and Import configuration file. [CredentialsScreen.kt:203-271,499-523]
+- Credential form validates email and password and links to the how-to guide. [CredentialsScreen.kt:328-400,171-180]
+- Navigation wires continue -> INCOMING, Google -> GOOGLE, scan -> SCAN, file pick -> TransferImportViewModel.loadFile. [ui/nav/KmailNavHost.kt:77-96]
+
+5.2 Google connect screen
+
+- Composable exposes open-inbox, add-another, and back callbacks; state maps to progress and failure strings. [ui/setup/GoogleConnectScreen.kt:23-27,80-105]
+- Navigation allows adding another account after Google connect. [KmailNavHost.kt:98-107]
+- Authorization uses only gmail.modify scope, no client id/secret in code, and revokes access by removing cached token and calling Google revoke. [auth/google/PlayServicesAuthorizer.kt:27-32,48-51,71-85]
+
+5.3 IMAP/SMTP server setup
+
+- ServerScreen accepts host, port, TLS/STARTTLS choice, username, and password. [ui/setup/ServerScreen.kt:30-138]
+- Incoming and outgoing routes are distinct, with provider hints on incoming. [KmailNavHost.kt:121-159]
+- Only SSL_TLS and STARTTLS are modeled; plaintext is intentionally not offered. [domain/model/ServerEndpoint.kt:3-6]
+- Validation rejects blank host, whitespace/leading dot/slash in host, invalid port, and blank username. [ServerEndpoint.kt:8-20]
+
+5.4 Connecting / Connected
+
+- Connecting screen retries/cancels connection and navigates to CONNECTED on success. [KmailNavHost.kt:161-176]
+- Connected screen offers open inbox and add another. [KmailNavHost.kt:178-198]
+
+5.5 QR scan
+
+- ScanScreen requests CAMERA permission and uses CameraX preview plus ImageAnalysis. [ui/setup/ScanScreen.kt:52-91,97-134]
+- ZXing reader is configured for QR_CODE only with TRY_HARDER. [ui/setup/QrAnalyzer.kt:20-27]
+- Scanned text is Base64-decoded and offered to the import VM. [KmailNavHost.kt:109-118; data/transfer/TransferText.kt:5-14]
+
+5.6 Home / mailbox
+
+- HomeScreen exposes add account, open message, compose, settings, and drafts callbacks. [ui/home/HomeScreen.kt:101-106]
+- Search pill supports query, sort, refresh, select-all, add account, and more options. [HomeScreen.kt:308-385]
+- Filter chips, date buckets, empty mailbox, sync error banner, selection bar, and move dialog are implemented. [HomeScreen.kt:396,433,451,495,515-589]
+- Mailbox selections include unified inbox, starred, unread, and folder. [ui/home/HomeViewModel.kt:136-139]
+- List limit is 500; archive/delete undo window is 4500 ms. [HomeViewModel.kt:104-105]
+- Bulk actions: mark read/unread, star/unstar, move, select all. [HomeViewModel.kt:260-307; HomeScreen.kt:515-555]
+
+5.7 Reader
+
+- ReaderScreen exposes back, compose callback, and message navigation. [ui/reader/ReaderScreen.kt:129-133]
+- Top bar supports archive, delete, mark unread, and move. [ReaderScreen.kt:183-207]
+- Details card shows subject, from/to/cc/date/id, unsubscribe, attachments, and blocked-remote "Show pictures" bar. [ReaderScreen.kt:282,628-668]
+- Reply/reply-all/forward bar and attachment cards are implemented. [ReaderScreen.kt:500-510,583-602,691-728,743-771]
+- WebView loads sanitized HTML and sets blockNetworkLoads based on the allowRemote decision. [ReaderScreen.kt:832-877; ui/reader/ReaderViewModel.kt:179-188]
+- Remote picture decision comes from ImagePrefs; default mode is ASK and "Show pictures" is per-message for this build. [data/prefs/ImagePrefs.kt:11-19,44-45; ReaderViewModel.kt:221-224] No call site writes the trusted-sender set in app/src/main. Classification: PARTIALLY IMPLEMENTED (ASK mode exists but no persistent trust UI).
+- HTML sanitization removes scripts/frames/handlers/unsafe URLs, blocks remote images unless allowed, converts safe cid images, and adds a CSP. [mail/HtmlSanitizer.kt:13-31,63-135]
+
+5.8 Compose
+
+- ComposeScreen exposes send, attach, discard, cc toggle, subject, body, signature preview, attachment chips, and recipient suggestions. [ui/compose/ComposeScreen.kt:91-104,158-194,219-224,279-351,388-443,498-540]
+- Contact suggestions require READ_CONTACTS permission and fall back to recents and cached senders. [data/contacts/ContactSuggester.kt:35-59]
+
+5.9 Drafts
+
+- DraftsScreen lists local drafts, shows recipient/subject fallback, opens draft, and deletes. [ui/drafts/DraftsScreen.kt:49-111]
+- DraftStore stores drafts locally only, encrypted with the Keystore key and draft-id AAD; drafts are not uploaded to the server. [data/drafts/DraftStore.kt:24-27,66-101]
+- DraftCodec version 1 bounds items and rejects corrupt/unknown-version data. [data/drafts/DraftCodec.kt:11-14,42-66,79-93]
+
+5.10 Settings
+
+- Settings hub pages: Hub, Accounts, Signature, Appearance, Language, Sync, Privacy, Inbox, Links, About. [ui/settings/SettingsScreen.kt:83-148,329-339]
+- Accounts page supports add account, transfer/QR row, account detail, and removal. [SettingsScreen.kt:180-204,523-543]
+- Appearance controls theme mode, AMOLED (when not light), and dynamic color on API 31+. [SettingsScreen.kt:210-238]
+- Sync controls background sync, interval, notifications, and hiding notification content. [SettingsScreen.kt:244-267]
+- Privacy controls PIN lock, biometrics, recovery setup, and auto-lock. [SettingsScreen.kt:269-313]
+- Inbox controls sender photos and left/right swipe actions. [ui/settings/InboxSettingsPage.kt:54-130]
+- Links page chooses in-app Custom Tabs versus external browser. [ui/settings/LinksPage.kt:25-44]
+- About page opens privacy policy and how-to guide and shows version. [SettingsScreen.kt:323-327]
+- Account transfer entry is implemented from Settings accounts and account detail. [SettingsScreen.kt:180,203; ui/settings/TransferExportDialog.kt:42-64]
+
+5.11 App Lock screen
+
+- LockScreen supports PIN entry, biometric unlock, and recovery/forgot path. [ui/lock/LockScreen.kt:55-163]
+- Biometric availability checks BIOMETRIC_STRONG. [ui/lock/Biometric.kt:9-25]
+
+5.12 Legal and support surfaces
+
+- LegalLinks exposes PRIVACY_URL and HOW_TO_USE_URL and renders both links. [ui/components/LegalLinks.kt:18-44]
+- Settings About and Credentials help use the same URLs. [SettingsScreen.kt:324-325; CredentialsScreen.kt:179-180]
+- AppSource exposes GitHub and donation URLs and opens the Play Store listing when installed from Play. [ui/support/AppSource.kt:9-43]
+- No Terms of Service / ToS URL, string, or document was found. Classification: NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+- res/values/strings.xml:193 declares settings_privacy_url with a different URL, but no code reference was found. Classification: PARTIALLY IMPLEMENTED (stale/unused resource).
+
+5.13 Additional UI evidence from final surface pass
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- MainActivity applies edge-to-edge, resolves appearance mode, sets system bar style, hosts KmailNavHost, conditionally hosts RatePromptHost, and overlays lock UI wired to PIN/biometric/recovery callbacks. [ui/MainActivity.kt:36-89]
+- Foreground/background lifecycle hooks call AppLockManager. [MainActivity.kt:92-100]
+- Route-specific transitions and reduced-motion behavior are implemented in KmailTransitions and Motion. [ui/nav/KmailTransitions.kt:24-90; ui/theme/Motion.kt:16-39]
+- WelcomeScreen has a responsive layout and feature rows, and WelcomeHero is decorative. [ui/setup/WelcomeScreen.kt:61-194; ui/setup/WelcomeHero.kt:25-52] See the unreachable-route note in section 4.
+- CredentialsScreen dispatches step switching, help dialog, and "other ways" dialog; PasswordField provides visibility toggle. [ui/setup/CredentialsScreen.kt:92-199,203-285,328-399,499-526; ui/setup/PasswordField.kt:24-63]
+- SetupViewModel holds setup state and handles validation, server prefill, connect lifecycle, server-edit/port-security coupling, password zeroing, and state clearing. [ui/setup/SetupViewModel.kt:28-64,76-204,210-274]
+- GoogleConnectViewModel handles chooser, consent launcher, connected/error/loading, profile validation, and add outcomes. [ui/setup/GoogleConnectViewModel.kt:25-139]
+- ScanScreen requests CAMERA and runs CameraX preview; QrAnalyzer uses ZXing frame analysis. [ui/setup/ScanScreen.kt:52-61,96-139; ui/setup/QrAnalyzer.kt:13-49]
+- ServerScreen authentication field is read-only and disabled because only NORMAL_PASSWORD is modeled. [ui/setup/ServerScreen.kt:103-112]
+- ConnectingScreen and ConnectionMessages cover progress/error/retry; ConnectedScreen covers open-inbox/add-another. [ui/setup/ConnectingScreen.kt:10-38; ui/setup/ConnectionMessages.kt:8-36; ui/setup/ConnectedScreen.kt:33-93]
+- HomeDrawer covers accounts, unified/starred/unread views, folders, drafts, and settings. [ui/home/HomeDrawer.kt:189-363]
+- MessageRow implements configurable swipe actions; InboxPrefs stores swipe and sender-photo choices; ActionNotices maps action feedback text. [ui/home/MessageRow.kt:101-203; ui/home/InboxPrefs.kt:8-47; ui/home/ActionNotices.kt:21-27]
+- HomeScreen includes pagination trigger, undo snackbar, sync progress, pull-to-refresh, loading/empty states, and move dialog. [ui/home/HomeScreen.kt:100-295,562-591]
+- ReaderScreen top bar includes archive/delete/more with mark-unread, move, and dark/original view; reader supports thread states, horizontal swipe navigation, external-link confirmation, and body/error/loading states. [ui/reader/ReaderScreen.kt:169-334,339-380,499-689]
+- Reader WebView disables JavaScript, file access, content access, storage, and safe-browsing leakage paths; it filters link schemes to http/https/mailto/tel and sets blockNetworkLoads from the remote-image decision. [ui/reader/ReaderScreen.kt:833-876]
+- ThreadModels normalizes Re:/Fwd: subjects and builds thread groups; SwipeNavigation implements reader swipe decision; AttachmentKinds classifies attachments. [ui/reader/ThreadModels.kt:6-48; ui/reader/SwipeNavigation.kt:10-44; ui/reader/AttachmentKinds.kt:3-24]
+- ReaderViewModel covers thread/body/subject/older/newer/folder state, sanitization, remote-image gating, dark-view re-render, and actions. [ui/reader/ReaderViewModel.kt:39-74,121-141,179-274]
+- ComposeScreen includes From selector, To/Cc/Bcc, suggestions, subject, attachment chips, plain body editor, signature preview, discard confirmation, and send errors. [ui/compose/ComposeScreen.kt:91-205,214-364,368-384,499-551]
+- ComposeViewModel handles mode/draft args, autosave, reply/draft/forward prefill, signature selection, attachments, recipient validation, MIME build/send, recents, draft deletion, and Sent append. [ui/compose/ComposeViewModel.kt:55-127,131-201,247-382,386-447]
+- Rich editing is implemented for email signatures via RichEditor/RichText, not for the compose body; ComposeBody escapes the plain body and adds the stored signature. [ui/settings/RichEditor.kt:56-361; ui/settings/RichText.kt:20-383; ui/compose/ComposeScreen.kt:335-364; ui/compose/ComposeBody.kt:16-30]
+- SettingsHub includes support rows and version footer; SignatureSection covers email/mobile signature pages; LanguageSettings handles system/default selection; RecoverySetupDialog and PassphraseField support lock flows. [ui/settings/SettingsHub.kt:42-95,152-159; ui/settings/SignatureSection.kt:51-199; ui/settings/LanguageSettings.kt:36-79; ui/settings/RecoverySetupDialog.kt:29-92; ui/settings/PassphraseField.kt:24-60]
+- SettingsViewModel exposes appearance/sync/lock setters, recovery, account removal with optional PIN, and Google revoke. [ui/settings/SettingsViewModel.kt:83-154]
+- RecoveryFlow implements answer-questions-then-new-PIN; Biometric helper checks availability and authenticates. [ui/lock/RecoveryFlow.kt:32-137; ui/lock/Biometric.kt:9-30]
+- RatePromptHost is gated on Play Store install detection and usage thresholds; SupportSection varies by install source; LinkOpener blocks javascript/intent URLs, honors in-app Custom Tabs preference, and falls back to external intent. [ui/support/RatePrompt.kt:25-125; ui/support/AppSource.kt:17-42; ui/support/SupportSection.kt:14-45; ui/components/LinkOpener.kt:12-47]
+- Shared UI primitives exist for loading/empty/error states, auth forms, icons/wordmark, theme colors/typography/shapes, appearance persistence, and motion. [ui/components/StateLayout.kt:13-26; LoadingState.kt:10-24; EmptyState.kt:9-30; ErrorState.kt:10-35; AuthComponents.kt:51-251; AppIcons.kt:17; ExtraIcons.kt:13; KmailWordmark.kt:20; ui/theme/Theme.kt:11-42; AppearanceStore.kt:11-40; Motion.kt:16-39]
+
+PARTIALLY IMPLEMENTED / SOURCE INCONSISTENCY
+
+- Welcome QR/file callbacks are unused in the unreachable WelcomeScreen and retained only for source compatibility. [ui/setup/WelcomeScreen.kt:61-75]
+- KmailTransitions compares destination.route to templated Routes.READER/COMPOSE strings, while navigation uses concrete Routes.reader()/Routes.compose() values. This is a source inconsistency; no runtime effect is asserted. [ui/nav/KmailTransitions.kt:26-30; Routes.kt:15-22; KmailNavHost.kt:205-222]
+- ComposeBody.initial is retained for old callers; no current caller was found in app/src/main/java. [ui/compose/ComposeBody.kt:6-14]
+
+--------------------------------------------------------------------------------
+6. MAIL PROVIDER BOUNDARY AND TRANSPORT
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- MailProvider is a protocol boundary returning MailResult and exchanging raw RFC 822 bytes; implementations must not log credentials or content. [domain/mail/MailProvider.kt:6-10]
+- Operations include testConnection, listFolders, fetchHeaders, fetchRawMessage, updateFlags, moveMessages, send, appendMessage, fetchOlder, fetchFlags, and fetchRawBatch. [MailProvider.kt:14-80]
+- ProviderCapabilities contains supportsPush and supportsCategories. [domain/mail/ProviderCapabilities.kt:3-6]
+- TLS properties enforce hostname checks, TLS 1.2 or TLS 1.2/1.3 by API level, 20-second timeouts, implicit TLS for SSL_TLS, and required STARTTLS for STARTTLS. [mail/AngusProperties.kt:7-46]
+- Auth mechanisms are PLAIN LOGIN; no ssl.trust, custom socket factory, relaxed certificate checks, or mail.debug are configured. [AngusProperties.kt:15-24; docs/DECISIONS.md:57-59]
+- Gmail authorization requests only gmail.modify; tokens are short-lived, cached in memory only, not written to disk, and verifiable by granted scopes. [auth/google/PlayServicesAuthorizer.kt:27-32,48-51,87-118]
+- Gmail HTTP is HTTPS-only, disables redirects, and does not log tokens or bodies. [mail/gmail/GmailHttp.kt:12-21,25-53]
+- Mail errors are categorized without retaining exception messages that may contain credentials or content. [mail/MailErrorMapper.kt:10-24; domain/mail/MailError.kt:3-6]
+- A source search for Log., println(, Timber., logger, and Logger under app/src/main/java returned no matches.
+
+PARTIALLY IMPLEMENTED / NOT VERIFIED
+
+- Microsoft Graph is mentioned as a possible future provider but is not implemented. [MailProvider.kt:6-8] Classification: PLANNED / NOT IMPLEMENTED.
+- Provider presets are built-in and not network-verified; no autodiscovery sends the email domain to a third party. [docs/DECISIONS.md:50-51]
+- Angus Mail requires a temporary non-zeroable String password copy for connect. [mail/AngusConnectionTester.kt:15-17] Classification: PARTIALLY IMPLEMENTED.
+- Real TLS behavior on devices, live provider compatibility, and external URL reachability are NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+
+--------------------------------------------------------------------------------
+7. LOCAL DATA, SYNC, AND CACHING
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Room database version 2 with entities accounts, folders, messages, credentials, gmail_ids and five DAOs. [data/db/KmailDatabase.kt:6-22]
+- AccountRepository normalizes email, rejects duplicates case-insensitively, inserts a UUID account, saves IMAP and SMTP credentials, and deletes the account if credential saving fails. [data/repo/AccountRepository.kt:37-63]
+- Removal deletes credentials and cascaded local data. [AccountRepository.kt:95-99]
+- Google accounts store metadata only; no token or secret is persisted, and IMAP/SMTP endpoints are unused placeholders. [AccountRepository.kt:65-87]
+- BodyStore keeps encrypted raw messages under filesDir/bodies, uses body:id AAD, writes via temp file and rename, deletes corrupt/undecryptable files, and trims oldest files to 80 percent of a 200 MB cap. [data/repo/BodyStore.kt:16-20,27-29,49-107]
+- BodyPrefetcher downloads the newest 15 inbox messages in one batch, skips already-cached bodies, fills blank snippets, and caps each message at 2 MB. [data/repo/BodyPrefetcher.kt:17-54]
+- Sync and message actions are covered by unit tests for newest-first sync, UIDVALIDITY changes, duplicate headers, folder reconciliation, load-older, mark-read, archive, trash, move, and cross-account move rejection. [app/src/test/java/com/kmail/thekami/data/repo/SyncRepositoryTest.kt:166-277; MessageActionsRepositoryTest.kt:88-147]
+
+PARTIALLY IMPLEMENTED / NOT VERIFIED
+
+- Search filters the loaded list only; it does not search bodies or the server. [docs/PROGRESS.md:190-192]
+- Undo delays the server action about 4.5 seconds; closing the app in that window drops the action. [docs/PROGRESS.md:191; HomeViewModel.kt:105]
+- Starred and Unread views cover cached messages only. [docs/PROGRESS.md:182]
+- Sent-folder copy behavior has conflicting documentation: docs/DECISIONS.md:66 says not implemented, while docs/PROGRESS.md:208 says Sent is synced so replies appear in threads. Classification: OWNER CONFIRMATION REQUIRED.
+- On-device sync/notification behavior is NOT VERIFIED — SOURCE EVIDENCE NOT FOUND; docs/PROGRESS.md repeatedly marks items "verify in CI and on a device".
+
+--------------------------------------------------------------------------------
+8. SECURITY AND PRIVACY CONTROLS
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- AndroidKeystoreCipher uses AndroidKeyStore AES-256-GCM, no padding, 128-bit tag, non-exportable key, alias kmail.secrets.v1, StrongBox attempt on API 28+ with fallback, and never creates a key during decrypt. [data/security/AndroidKeystoreCipher.kt:17-90]
+- CredentialStore encrypts mailbox passwords with AAD accountId|purpose, stores only IV/ciphertext/timestamp in Room, returns CharArray, and zeroes intermediate buffers. [data/security/CredentialStore.kt:13-70]
+- CredentialEntity contains no plaintext password column. [data/db/CredentialEntity.kt:7-25]
+- DraftStore and BodyStore use the same Keystore cipher with draft-id and body-id AAD. [DraftStore.kt:24-27,66-101; BodyStore.kt:16-20,49-92]
+- PIN policy requires 4-8 digits, rejects all-same/sequential/common PINs, uses 120000 PBKDF2-HMAC-SHA256 iterations with 16-byte salt, constant-time compare, and lockout after 5 failures capped at 1 hour. [data/security/PinPolicy.kt:12-40]
+- PIN is never stored; salted hash and failure counters live in SharedPreferences kmail_lock. Source explicitly says the hash is not bound to Android Keystore yet. [data/security/AppLockStore.kt:22-25,30-71]
+- Recovery uses exactly two questions, NFKC/lowercase/trim/whitespace normalization, hashed normalized answers, all-answer verification, and lockout after 3 failures capped at 6 hours. [data/security/RecoveryPolicy.kt:20-52; AppLockStore.kt:73-131]
+- Backup and device transfer exclusions plus cleartext disabled are evidenced in section 3.
+- No analytics, crash reporting, ads, or tracking code was found in source or dependencies. [app/build.gradle.kts:73-105; repository search] This is a source-inventory claim, not an external runtime audit.
+
+PARTIALLY IMPLEMENTED / NOT VERIFIED
+
+- Recovery question text is stored plaintext so it can be displayed; answers are hashed. [AppLockStore.kt:80-95; docs/PROGRESS.md:168]
+- No direct AndroidKeystoreCipher unit test was found; security tests use fake ciphers and do not verify real Keystore/StrongBox behavior. [app/src/test/java/com/kmail/thekami/data/security/CredentialStoreTest.kt:12]
+- No AppLockStore or recovery-store unit tests were found. [docs/PROGRESS.md:172]
+- SQLCipher whole-database encryption remains an open decision. [docs/DECISIONS.md:30-33]
+- Device-level validation of Keystore loss behavior and biometricPrompt behavior is NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+
+--------------------------------------------------------------------------------
+9. TRANSFER / KML COMPATIBILITY AUDIT
+--------------------------------------------------------------------------------
+
+IMPORTANT NAMING FINDING
+
+- No .kml file, no KML/kml literal in docs, and no KML string in source was found. Classification for the user term "KML": NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+- The actual exported filename is kmail-accounts.kmail. [ui/settings/TransferResultDialog.kt:48-85]
+- Save MIME type is application/octet-stream. [TransferResultDialog.kt:48-50]
+- File import accepts any document type and does not validate extension. [KmailNavHost.kt:80-90]
+- This audit therefore treats "KML" as an external/user term with no verified Android artifact. Desktop compatibility work must target the observed .kmail binary format unless an owner supplies a separate KML specification.
+
+9.1 Encrypted envelope
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Layout: salt(16) + iv(12) + AES-256-GCM ciphertext and tag. [data/transfer/TransferCodec.kt:23-28,33-45]
+- Salt and IV are random from SecureRandom. [TransferCodec.kt:31,35-36]
+- Transformation AES/GCM/NoPadding; key 256 bits; tag 128 bits. [TransferCodec.kt:85-91]
+- AAD is a fixed ASCII string applied on encrypt and decrypt; literal value deliberately not reproduced here. [TransferCodec.kt:41,58,92]
+- Key derivation: PBKDF2WithHmacSHA256 over passphrase, salt concatenated with a hard-coded app-specific pepper, configured iterations, 256-bit output; PBEKeySpec password is cleared. [TransferCodec.kt:75-82]
+- Default iterations = 600000. [TransferCodec.kt:86]
+- The pepper literal exists in source at TransferCodec.kt:93. Its value is deliberately not reproduced. Source comment describes it as an accidental-decryption barrier, not the main secret. [TransferCodec.kt:23-27]
+- Wrong passphrase, tampering, truncation, and empty data are indistinguishable as TransferDecodeResult.Failed. [TransferCodec.kt:13-20,48-73]
+- Unsupported version maps to TransferDecodeResult.Unsupported. [TransferCodec.kt:63-65]
+
+9.2 Plaintext layout
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- VERSION = 2; maximum field length 4096 bytes. [data/transfer/TransferSerializer.kt:19-20]
+- Header: version byte, int64 createdAtMillis, account-count byte. [TransferSerializer.kt:22-29]
+- Account count must be 1..32. [TransferSerializer.kt:34-39; domain/transfer/TransferPackage.kt:36-46]
+- Per-account order: emailAddress, displayName, colorArgb, IMAP endpoint, SMTP endpoint, IMAP password, SMTP password. [TransferSerializer.kt:50-69]
+- Endpoint order: host text, port int, security enum name, authMethod enum name, username text. [TransferSerializer.kt:89-95,117-123]
+- Text fields are UTF-8 byte blocks with big-endian int length via Java DataOutputStream/DataInputStream. [TransferSerializer.kt:9-14,71-103]
+- Permitted enum names are SSL_TLS/STARTTLS for ConnectionSecurity and NORMAL_PASSWORD for AuthMethod. [domain/model/ServerEndpoint.kt:3-6]
+- Oversized or negative field lengths are rejected. [TransferSerializer.kt:97-100]
+- Password byte and char buffers are zeroed; partially read accounts are wiped on parse failure. [TransferSerializer.kt:41-46,78-86,105-114]
+
+9.3 Export flow
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Entry points: all-accounts transfer row and per-account transfer row. [ui/settings/SettingsScreen.kt:180,203]
+- Export dialog lets user select accounts, asks PIN when App Lock is enabled, and requires passphrase length >= 10 plus matching repeat. [ui/settings/TransferExportDialog.kt:40,42-64,79-107]
+- PIN/passphrase use plain remember so they do not enter saved instance state; dialogs set FLAG_SECURE. [TransferExportDialog.kt:82-86,115; TransferResultDialog.kt:95-101]
+- Exporter loads account metadata plus IMAP/SMTP credentials, builds TransferPackage with current timestamp, and wipes loaded secrets. [data/transfer/TransferExporter.kt:20-56]
+- ExportViewModel zeroes the passphrase char array after export. [ui/settings/TransferExportViewModel.kt:35-49]
+- QR text is URL-safe Base64 without padding. [data/transfer/TransferText.kt:5-14]
+- QR is shown only when encoded text is <= 900 characters; otherwise the UI tells the user the QR is too big. [TransferResultDialog.kt:35-47,71-84]
+- QR generation uses ZXing QR_CODE with ErrorCorrectionLevel.L. [ui/settings/QrCode.kt:22-50]
+- Files are raw encrypted bytes. [TransferText.kt:5-6; TransferResultDialog.kt:48-63]
+
+9.4 Import flow
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- QR scan and file pick are wired from Credentials. [KmailNavHost.kt:80-96,109-118]
+- Import accepts byte arrays only in 45..32768 bytes; file reads reject larger input while streaming. [ui/setup/TransferImportViewModel.kt:56-62,141-162]
+- Passphrase dialog is FLAG_SECURE-protected; passphrase is zeroed after decode. [ui/setup/TransferImportHost.kt:54-98; TransferImportViewModel.kt:71-91]
+- Pending encrypted bytes and decoded package are wiped on clear/onCleared and after import. [TransferImportViewModel.kt:93-119]
+- Per account: create NewAccount copy, test IMAP, then test SMTP, then add. [TransferImportViewModel.kt:121-139]
+- Outcomes: ADDED, ALREADY_EXISTS, INCOMING_FAILED, OUTGOING_FAILED, FAILED. [TransferImportViewModel.kt:26-30]
+- UI shows progress and one result per account. [TransferImportHost.kt:28-52,100-160]
+
+PARTIALLY IMPLEMENTED
+
+- Import is sequential, not atomic; accounts added earlier remain if a later account fails. No whole-package rollback was found. [TransferImportViewModel.kt:108-119]
+- Duplicate email produces ALREADY_EXISTS; no merge/update path exists. [AccountRepository.kt:39-40; TransferImportViewModel.kt:130-134]
+- QR capacity is a character-count heuristic, not measured QR symbol capacity. [TransferResultDialog.kt:35-46]
+- No QR generation or camera-scanning unit test was found. Classification: PLANNED / NOT IMPLEMENTED for test coverage.
+- No clipboard export/import call site was found. Classification: NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+
+9.5 Included and excluded transfer data
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Included: creation timestamp, email, display name, color, IMAP endpoint, SMTP endpoint, IMAP password, SMTP password. [TransferSerializer.kt:22-58]
+- Excluded by model: account id, provider type, Gmail token, messages, drafts, contacts, preferences, PIN, and recovery answers. [domain/transfer/TransferPackage.kt:7-46; data/transfer/TransferExporter.kt:21-24]
+
+PARTIALLY IMPLEMENTED
+
+- Gmail accounts are effectively not exportable: addGoogleAccount stores no secret, and exporter requires both IMAP and SMTP credentials. [AccountRepository.kt:65-87; TransferExporter.kt:41-56]
+- Provider type is not transferred; Account has provider field but TransferAccount does not. Imported accounts default to IMAP provider. [domain/model/Account.kt:8-19; TransferPackage.kt:7-13; AccountRepository.kt:42-49]
+
+--------------------------------------------------------------------------------
+10. TESTS, CI, AND RELEASE
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- CI triggers on push to main and workflow_dispatch. [.github/workflows/release.yml:1-6]
+- CI uses Temurin Java 17 and Gradle 9.6.0. [release.yml:21-31]
+- Keystore is decoded from GitHub Secret KMAIL_KEYSTORE_B64 into runner temp; missing secret fails the job; file is deleted with if: always(). [release.yml:37-46,134-136]
+- Version computation reads version.properties, considers existing kmail-v* tags, increments patch, rolls minor/major, rejects major > 99, and refuses an existing tag. [release.yml:48-107]
+- Build/test command: gradle --no-daemon --stacktrace testDebugUnitTest assembleRelease bundleRelease with signing env vars. [release.yml:113-123]
+- APK is verified with apksigner --verbose --print-certs. [release.yml:125-132]
+- AAB is uploaded as an artifact and attached with the APK to a GitHub release created with --generate-notes --latest. [release.yml:138-173]
+- Unit-test inventory from read-only enumeration: 39 .kt files under app/src/test; broad coverage across mail/MIME/sanitization, domain models, transfer codec, credentials, PIN/recovery, drafts, repositories, sync, setup, home helpers, reader helpers, and compose helpers. Representative evidence: TransferCodecTest.kt:42-92; CredentialStoreTest.kt:52-90; SyncRepositoryTest.kt:166-277; SetupViewModelTest.kt:92-234; HtmlSanitizerTest.kt:13-138.
+- No @Ignore annotations, TODO stubs, or assertTrue(true) placeholders were found in the unit tests.
+
+PARTIALLY IMPLEMENTED / NOT VERIFIED
+
+- app/src/test/java/com/kmail/thekami/sync/BackgroundSyncTest.kt is 0 bytes. Classification: PLANNED / NOT IMPLEMENTED.
+- No app/src/androidTest directory was found; no instrumented UI tests exist. Classification: PLANNED / NOT IMPLEMENTED.
+- CI runs testDebugUnitTest only; no lint, release unit tests, dependency scanning, test-report upload, or connectedAndroidTest task was found. Classification: PARTIALLY IMPLEMENTED.
+- On-device UI behavior and release runtime behavior are NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+- Certificate attributes in docs/DECISIONS.md:56 and docs/PROGRESS.md:42 cannot be confirmed from source. Classification: NOT VERIFIED — SOURCE EVIDENCE NOT FOUND.
+
+--------------------------------------------------------------------------------
+11. LOCALIZATION, FONTS, THEMES, AND RESOURCES
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Locale directories exist for en, de, ja, hi, ar, ko, bn plus values-night. [resource directory enumeration; locales_config.xml:3-9]
+- Base has 443 string declarations. Translated coverage by read-only count: bn 385, and ar/de/hi/ja/ko 315 each. Missing families include welcome, transfer/QR, import, scan, Google sign-in, signature, swipe-read, and links settings. [res/values*/ enumeration]
+- Inter font files are bundled and registered as a FontFamily for Latin text. [res/font/inter_*.ttf; ui/theme/Type.kt:12-29]
+- Compose theme uses system dark mode, dynamic color on API 31+, and persisted appearance preferences. [ui/theme/Theme.kt:14-30; ui/theme/AppearanceStore.kt:14,38; MainActivity.kt:55]
+- Notification icon is a white envelope vector set in code; one channel "mail" with IMPORTANCE_DEFAULT. [res/drawable/ic_notification.xml:1-9; sync/AndroidMailNotifier.kt:57-100]
+- Launcher icons include density PNGs and adaptive icons. [res/mipmap-*; AndroidManifest.xml:11-12]
+
+PARTIALLY IMPLEMENTED / DOCUMENTATION CONFLICT
+
+- Missing-translation lint is suppressed in seven base resource files. [res/values/strings.xml:2 and corresponding strings_*.xml line 2]
+- docs/DECISIONS.md:23 says dynamic color by default, but AppearanceStore.kt:14 defaults dynamicColor to false; docs/PROGRESS.md:227 confirms off by default. Classification: PARTIALLY IMPLEMENTED (documentation conflict).
+- docs/DECISIONS.md:24 says system font, but Type.kt:14-19 bundles Inter. Classification: PARTIALLY IMPLEMENTED (documentation conflict).
+- Arabic RTL glyph/layout checks and on-device visual verification are NOT VERIFIED — SOURCE EVIDENCE NOT FOUND. [docs/PROGRESS.md:11-12,122]
+
+--------------------------------------------------------------------------------
+12. LEGAL / PRIVACY POLICY SOURCE RECONCILIATION
+--------------------------------------------------------------------------------
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Local privacy policy exists with last-updated date and sections on connections, passwords, device storage, App Lock, attachments, remote content, exclusions, deletion, children, and changes/contact. [docs/PRIVACY_POLICY.md:1-33]
+- App links to privacy policy and how-to guide. [ui/components/LegalLinks.kt:18-44; SettingsScreen.kt:324-325]
+- Password encryption claim is supported by CredentialStore and AndroidKeystoreCipher. [CredentialStore.kt:13-70; AndroidKeystoreCipher.kt:17-90]
+- "No analytics/crash reports/ads/tracking" is consistent with the declared dependency set and source search. [app/build.gradle.kts:73-105; repository search]
+- Remote content blocked by default is supported by ImagePrefs default ASK with no initially trusted senders and no trust-writing UI call site; per-message "Show pictures" can allow content. [ImagePrefs.kt:11-19,44-45; ReaderViewModel.kt:179,221-224; repository search]
+
+PARTIALLY IMPLEMENTED / OWNER CONFIRMATION REQUIRED
+
+- Privacy policy says message bodies opened are kept in memory only. [docs/PRIVACY_POLICY.md:11] Source implements an encrypted on-disk BodyStore under filesDir/bodies with a 200 MB cap and 15-message prefetch. [BodyStore.kt:16-20,27-29,105-107; BodyPrefetcher.kt:17-54; docs/PROGRESS.md:187-190] OWNER CONFIRMATION REQUIRED before publishing this policy as accurate.
+- docs/PROGRESS.md:220-223 says remote pictures are on by default via ImageMode.ALWAYS, but ImagePrefs.readMode defaults to ASK and no UI sets ALWAYS in this source. Classification: PARTIALLY IMPLEMENTED (documentation conflict).
+- The local policy contact address is present at docs/PRIVACY_POLICY.md:33; its value is deliberately not reproduced in this audit.
+- No Terms of Service source was found. Classification: PLANNED / NOT IMPLEMENTED for product documentation.
+- The unused settings_privacy_url string points to a different URL than LegalLinks.PRIVACY_URL. [res/values/strings.xml:193; LegalLinks.kt:18] OWNER CONFIRMATION REQUIRED.
+
+--------------------------------------------------------------------------------
+13. MASTER UNKNOWN / NOT VERIFIED LIST
+--------------------------------------------------------------------------------
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+
+- Any .kml format, file, or specification.
+- On-device behavior, screenshots, visual parity, notification behavior, sync behavior, and external URL reachability.
+- Real Android Keystore/StrongBox behavior, key invalidation, and biometric hardware behavior.
+- Live IMAP/SMTP/Gmail provider compatibility and certificate behavior outside unit tests.
+- Real Play Services consent/revocation behavior.
+- Effective Kotlin/KSP/AGP compatibility in an actual build; no build was run in this audit.
+- Terms of Service content or URL.
+- Certificate fingerprint claims in docs.
+- Debug keystore file claimed by docs/DECISIONS.md:36.
+- Room schema artifact for version 1.
+
+--------------------------------------------------------------------------------
+14. CLEANLINESS AND EVIDENCE INTEGRITY
+--------------------------------------------------------------------------------
+
+- No source file, Gradle file, resource, test, or git history entry was modified during this audit.
+- No build was run.
+- No commit or push was performed.
+- No secret value, passphrase, password, token, private key, or personal email address is reproduced in this document.
+- The only files created by this task are the three requested TXT files under desktop-planning/.
+
+END OF AUDIT

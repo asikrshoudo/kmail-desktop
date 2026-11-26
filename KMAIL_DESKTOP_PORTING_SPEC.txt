@@ -1,0 +1,367 @@
+KMAIL DESKTOP PORTING SPECIFICATION
+
+Status: PLANNED / NOT IMPLEMENTED
+Audience: desktop implementation team, product owner, security reviewer
+Date: 2026-11-26
+
+SOURCE OF TRUTH
+
+All Android behavior in this specification is derived from:
+  desktop-planning/KMAIL_ANDROID_COMPLETE_AUDIT.txt
+That file is the source-based audit and contains the file:line evidence for every claim summarized here. Where this spec disagrees with documentation, the audit's source evidence is authoritative. No Desktop implementation exists in the repository at the time of writing.
+
+STATUS LEGEND
+
+IMPLEMENTED — VERIFIED IN SOURCE
+Android behavior verified in source. Desktop status remains PLANNED / NOT IMPLEMENTED unless explicitly stated.
+
+PARTIALLY IMPLEMENTED
+Android behavior exists with gaps; Desktop must not copy the gap silently.
+
+PLANNED / NOT IMPLEMENTED
+Desktop work to be designed and built.
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+No source evidence found; owner decision or further research required.
+
+OWNER CONFIRMATION REQUIRED
+Documentation conflict or product/security decision required before porting.
+
+--------------------------------------------------------------------------------
+1. PRODUCT GOAL AND PORTING PRINCIPLES
+--------------------------------------------------------------------------------
+
+PLANNED / NOT IMPLEMENTED
+
+- Goal: produce a Desktop Kmail client that preserves the Android product identity: independent, privacy-focused email client; no mail hosting; connects to existing IMAP/SMTP and Gmail accounts. [Audit section 1]
+- Desktop must remain local-first: credentials, cached bodies, drafts, and preferences stay under user control and are not sent to TheKami. [Audit sections 7-8]
+- Transport must remain encrypted-only: SSL_TLS or STARTTLS for IMAP/SMTP; HTTPS-only for Gmail; cleartext network access must not be introduced. [Audit sections 3 and 6]
+- Port behavior, not screenshots: Android UI is Compose/Material 3; Desktop UI framework is an open decision.
+- No real credentials, passphrase values, tokens, private keys, or personal contact values may be embedded in code, tests, or documentation.
+
+OWNER CONFIRMATION REQUIRED
+
+- README says the app is not usable yet while source implements broad functionality. Product status must be confirmed before public Desktop messaging. [Audit section 1]
+- Privacy policy says bodies are memory-only, but Android stores encrypted bodies on disk. Decide whether Desktop matches source or policy. [Audit section 12]
+- No Terms of Service source exists. Desktop release needs owner-approved ToS or an explicit decision that none is required. [Audit section 12]
+
+--------------------------------------------------------------------------------
+2. PROPOSED DESKTOP MODULE BOUNDARIES
+--------------------------------------------------------------------------------
+
+PLANNED / NOT IMPLEMENTED
+
+The following module split is a recommendation derived from Android boundaries, not an existing Desktop design.
+
+2.1 Shared domain module
+
+- Port Account, AccountSettings, ServerEndpoint, ConnectionSecurity, AuthMethod, FolderRole, MessageKey, MailResult/MailError, Draft, and transfer domain models.
+- Preserve enum names exactly for transfer compatibility: SSL_TLS, STARTTLS, NORMAL_PASSWORD. [Audit section 9.2]
+- Preserve message identity semantics: account + folder + UIDVALIDITY + UID, with soft removal. [Audit section 7]
+
+2.2 Shared provider module
+
+- Preserve MailProvider boundary from Android, including raw RFC 822 payloads and no credential/content logging. [Audit section 6]
+- Implement IMAP/SMTP adapter equivalent to AngusMailProvider on Desktop with 20-second timeouts, hostname verification, required STARTTLS, and TLS 1.2+.
+- Implement Gmail REST adapter equivalent to the Android Gmail provider with HTTPS-only, scoped authorization, short-lived tokens, no token persistence, and no client secret in code.
+
+2.3 Shared transfer module
+
+- Port TransferPackage model, TransferSerializer layout, TransferCodec envelope, and TransferText encoding.
+- Desktop must be byte-compatible with the Android .kmail format described in section 6 below.
+- Keep passphrase and password material in char/byte arrays; zero after use.
+
+2.4 Desktop local storage module
+
+- Replace Room with an owner-approved Desktop database.
+- Replace Android Keystore with an owner-approved OS secret store: Windows DPAPI/Credential Manager, macOS Keychain, Linux Secret Service/libsecret, or a cross-platform equivalent.
+- Keep credentials out of plaintext database columns, mirroring Android's encrypted-blob pattern. [Audit section 8]
+
+2.5 Desktop UI module
+
+- Implement screens listed in section 3.
+- Use the expanded Android UI surface map in KMAIL_ANDROID_COMPLETE_AUDIT.txt section 5.13 as the detailed source inventory for MainActivity, setup, Home, Reader, Compose, Settings, Lock, Support, Legal, and shared theme primitives.
+- Keep FLAG_SECURE-equivalent behavior where practical: no screenshots/recording of PIN or passphrase dialogs, or at minimum clear warnings and OS-level protection where supported.
+
+--------------------------------------------------------------------------------
+3. SCREEN AND FEATURE PORTING MAP
+--------------------------------------------------------------------------------
+
+Every Desktop item below is PLANNED / NOT IMPLEMENTED. The cited Android behavior is IMPLEMENTED — VERIFIED IN SOURCE unless marked otherwise.
+
+3.1 Setup / Credentials
+
+Android: email/password form, provider chooser, Google option, help, QR scan, file import. [Audit section 5.1]
+Desktop plan:
+- Provider choice: Google or existing IMAP/SMTP account.
+- Email/password entry with validation equivalent to EmailValidation and SetupViewModel.
+- "Other ways" surface for QR/file import.
+- Do not reproduce the unreachable WelcomeScreen; Android routes WELCOME directly to CREDENTIALS. [Audit section 4]
+
+3.2 Google connect
+
+Android: GoogleConnectScreen with open-inbox/add-another/back; Play Services only gmail.modify scope, no refresh token persisted. [Audit section 5.2]
+Desktop plan:
+- Use owner-approved Desktop OAuth flow. Google Identity Services for Android is not directly portable.
+- Preserve least privilege: gmail.modify only unless owner approves additional scope.
+- Never persist access tokens unless an explicit owner-approved secure storage design is added.
+
+3.3 IMAP/SMTP server setup
+
+Android: host, port, TLS/STARTTLS, username, password; plaintext modes not offered. [Audit section 5.3]
+Desktop plan:
+- Preserve SSL_TLS/STARTTLS-only model.
+- Validate host, port, and username before connecting.
+- Show provider presets as prefill only; no network autodiscovery unless owner approves sending the domain to a third party.
+
+3.4 Connecting / Connected
+
+Android: connection state, retry, cancel, open inbox, add another. [Audit section 5.4]
+Desktop plan:
+- Preserve explicit retry/cancel and a clear success state.
+- Surface sanitized MailError categories only; never show raw exception messages that may contain addresses or credentials.
+
+3.5 QR scan / file import
+
+Android: CameraX QR scan, file picker, 45..32768 byte limit, Base64 text decoding. [Audit sections 5.5 and 9.4]
+Desktop plan:
+- Support webcam QR scanning if hardware available, plus manual paste/file import as fallback.
+- Preserve byte limits and rejection behavior.
+- Clarify Desktop clipboard/text handling as PLANNED / NOT IMPLEMENTED; Android has no clipboard transfer surface. [Audit section 9.4]
+
+3.6 Home / mailbox
+
+Android: unified inbox, starred, unread, folder selection, search, sort, filters, date groups, selection, bulk actions, move dialog, undo. [Audit section 5.6]
+Desktop plan:
+- Preserve unified inbox across accounts.
+- Search initially over loaded cache only; server-side search is PLANNED / NOT IMPLEMENTED.
+- Preserve undo semantics with a visible timer; decide whether Desktop persists pending undo across app exit, since Android drops it. [Audit section 7]
+
+3.7 Reader
+
+Android: sanitized HTML WebView, details card, attachments, reply/forward, unsubscribe link confirmation, show-pictures bar, dark view. [Audit section 5.7]
+Desktop plan:
+- Use an owner-approved HTML renderer with JavaScript disabled and CSP retained.
+- Preserve HtmlSanitizer rules: scripts/frames/handlers removed, unsafe URLs stripped, remote images blocked unless allowed, cid images converted only for safe MIME types.
+- Default remote images to blocked. Android source default is ASK with no trusted-sender writer; Desktop should not silently adopt the stale "ALWAYS" note in docs/PROGRESS.md. [Audit sections 5.7 and 12]
+- Unsubscribe is link-opening only; one-click POST is PLANNED / NOT IMPLEMENTED. [Audit section 5.7]
+
+3.8 Compose
+
+Android: to/cc/bcc flow, attachments, subject, body, signature preview, recipient suggestions, discard confirmation, send errors. [Audit section 5.8]
+Desktop plan:
+- Preserve local-only drafts and explicit discard confirmation.
+- Contact autocomplete must be permissionless on Desktop or use an owner-approved local contacts source; do not introduce cloud contact upload.
+
+3.9 Drafts
+
+Android: local encrypted draft list, open, delete; drafts not uploaded. [Audit section 5.9]
+Desktop plan:
+- Preserve local-only encrypted drafts and the DraftCodec version/limits.
+- Provide migration path from Android DraftCodec files if Desktop will read Android app data; otherwise document as PLANNED / NOT IMPLEMENTED.
+
+3.10 Settings
+
+Android hub pages: Accounts, Signature, Appearance, Language, Sync, Privacy, Inbox, Links, About. [Audit section 5.10]
+Desktop plan:
+- Preserve page grouping and the transfer entry point from Accounts/Account Detail.
+- Sync intervals: 5, 10, 15, 30, 60 minutes; background sync, notifications, hide content.
+- Privacy: PIN/biometric-equivalent, recovery, auto-lock.
+- Inbox: sender photos and swipe equivalents; Desktop equivalents are OWNER CONFIRMATION REQUIRED.
+- Links: in-app browser versus external browser; Desktop likely external browser by default, owner decision required.
+- About: privacy policy and how-to links; no ToS link exists.
+
+3.11 App Lock
+
+Android: PIN, biometric, recovery questions, lockout. [Audit section 8]
+Desktop plan:
+- Preserve PIN format and lockout policy unless a Desktop-specific policy is approved.
+- Do not store PIN/recovery hashes in a plaintext file. Android's plaintext SharedPreferences hashes are a known gap; Desktop must use the OS secret store or an owner-approved encrypted store. [Audit section 8]
+- Recovery questions are plaintext in Android; Desktop should either hash/display from secure storage or drop questions pending owner decision.
+
+--------------------------------------------------------------------------------
+4. TRANSFER / "KML" DESKTOP COMPATIBILITY
+--------------------------------------------------------------------------------
+
+4.1 Terminology finding
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+
+- No .kml file, KML literal, or KML specification exists in the Android repository. [Audit section 9]
+- The verified Android artifact is a binary file named kmail-accounts.kmail. [Audit section 9]
+- Desktop documentation should say "Kmail account transfer (.kmail)" rather than "KML" unless the owner supplies a separate KML spec.
+
+4.2 Byte-compatible format to implement
+
+PLANNED / NOT IMPLEMENTED on Desktop; IMPLEMENTED — VERIFIED IN SOURCE on Android.
+
+Encrypted file:
+- salt: 16 bytes, random.
+- iv: 12 bytes, random.
+- ciphertext: AES-256-GCM output including 128-bit tag.
+- transformation: AES/GCM/NoPadding.
+- key: PBKDF2-HMAC-SHA256(passphrase chars, salt || pepper, 600000 iterations, 256-bit key).
+- AAD: fixed ASCII string used by Android on encrypt and decrypt. Literal value deliberately not reproduced in this document; obtain it from the audited source under owner-approved access. [Audit section 9.1]
+- pepper: hard-coded app-specific constant at TransferCodec.kt:93. Literal value deliberately not reproduced. Source comment says it is not the main secret. Desktop must source it from the audited code under owner-approved access, not guess it. [Audit section 9.1]
+
+Plaintext after decryption:
+- version byte = 2.
+- int64 createdAtMillis.
+- account-count byte, valid range 1..32.
+- per account, in exact order:
+  1. UTF-8 length-prefixed emailAddress
+  2. UTF-8 length-prefixed displayName
+  3. int32 colorArgb
+  4. IMAP endpoint
+  5. SMTP endpoint
+  6. UTF-8 length-prefixed IMAP password
+  7. UTF-8 length-prefixed SMTP password
+- endpoint fields, in exact order:
+  1. UTF-8 length-prefixed host
+  2. int32 port
+  3. UTF-8 length-prefixed security enum name (SSL_TLS or STARTTLS)
+  4. UTF-8 length-prefixed auth method enum name (NORMAL_PASSWORD)
+  5. UTF-8 length-prefixed username
+- length-prefix is big-endian Java DataOutputStream int; each field must be <= 4096 bytes. [Audit section 9.2]
+
+Failure behavior:
+- Wrong passphrase, tampered ciphertext, truncation, and empty input should map to a single "wrong passphrase or damaged transfer" outcome to match Android. [Audit section 9.1]
+- Version other than 2 should map to "unsupported transfer". [Audit section 9.1]
+
+4.3 QR interoperability
+
+PLANNED / NOT IMPLEMENTED on Desktop.
+
+- Android QR text is URL-safe Base64 without padding of the raw encrypted bytes. [Audit section 9.3]
+- Android shows QR only if encoded text length <= 900 characters. [Audit section 9.3]
+- Desktop should decode the same text, enforce a sane size bound, and feed the resulting bytes into the same import pipeline.
+- QR symbol capacity is a heuristic on Android; Desktop should treat 900 as compatibility target, not a cryptographic limit. [Audit section 9.4]
+
+4.4 Export interoperability
+
+PLANNED / NOT IMPLEMENTED on Desktop.
+
+- Export passphrase minimum on Android is 10 characters with matching repeat. [Audit section 9.3]
+- If App Lock is enabled, Android requires PIN verification before export. [Audit section 9.3]
+- Android exports selected accounts with both IMAP and SMTP passwords. [Audit section 9.3]
+- Gmail accounts cannot be exported because no stored IMAP/SMTP secrets exist. [Audit section 9.5]
+- Desktop must not silently change the plaintext layout or encryption parameters; that would break Android import.
+
+4.5 Import interoperability
+
+PLANNED / NOT IMPLEMENTED on Desktop.
+
+- Android tests IMAP first, then SMTP, then adds the account. [Audit section 9.4]
+- Outcomes must be preserved: ADDED, ALREADY_EXISTS, INCOMING_FAILED, OUTGOING_FAILED, FAILED.
+- Android import is sequential and non-atomic; Desktop may improve this only if the change is explicit and documented. [Audit section 9.4]
+- Duplicate email is ALREADY_EXISTS; no merge/update behavior exists. [Audit section 9.4]
+- Provider type is not transferred; imported accounts default to IMAP. Desktop must not claim Gmail magic transfer. [Audit section 9.5]
+
+4.6 Compatibility test vectors
+
+PLANNED / NOT IMPLEMENTED
+
+- Create owner-approved known-answer vectors using synthetic accounts and a synthetic passphrase stored only in a secure test fixture, never in this document.
+- Tests must cover: single account, 32 accounts, wrong passphrase, tampered byte, truncated payload, empty payload, unsupported version, oversized field, bad enum name, duplicate email, IMAP failure, SMTP failure.
+- Android source already has round-trip and negative codec tests; port their intent, not literal secret values. [Audit section 10]
+
+--------------------------------------------------------------------------------
+5. SECURITY DESIGN REQUIREMENTS FOR DESKTOP
+--------------------------------------------------------------------------------
+
+PLANNED / NOT IMPLEMENTED
+
+- Secret storage: replace Android Keystore with OS-backed encrypted storage;Encrypt credentials, cached bodies, and drafts with authenticated encryption and context binding equivalent to Android AAD. [Audit section 8]
+- No plaintext credentials in database rows or logs. [Audit section 8]
+- Cleartext network traffic must be disabled; no debug trust overrides in production. [Audit section 3]
+- Preserve hostname verification and required STARTTLS. [Audit section 6]
+- Preserve HTML sanitizer behavior and CSP. [Audit section 5.7]
+- Preserve remote-content blocking; do not adopt stale "remote pictures on by default" documentation. [Audit sections 5.7 and 12]
+- Preserve no-analytics/no-ads/no-tracking posture unless owner approves a change. [Audit section 8]
+- Lock dialogs handling PIN/passphrase should minimize OS screenshot exposure.
+- Backups/device migration on Desktop are OWNER CONFIRMATION REQUIRED; Android excludes all app domains from backup and device transfer. [Audit section 3]
+
+PARTIALLY IMPLEMENTED / KNOWN ANDROID GAPS NOT TO COPY BLINDLY
+
+- Android PIN/recovery hashes are not Keystore-bound. [Audit section 8]
+- Android recovery questions are plaintext. [Audit section 8]
+- Android Angus connect requires a temporary non-zeroable String password copy. [Audit section 6]
+- Android body/draft/cache availability depends on Keystore key survival; Desktop key-loss behavior needs an explicit recovery/error UX decision. [Audit section 8]
+
+--------------------------------------------------------------------------------
+6. DATA MODEL AND MIGRATION
+--------------------------------------------------------------------------------
+
+PLANNED / NOT IMPLEMENTED
+
+- Define Desktop schema from Android Room v2 entities: accounts, folders, messages, credentials, gmail_ids. [Audit section 7]
+- Preserve message key semantics and soft-delete via removed timestamp. [Audit section 7]
+- Preserve account UUID identity; account id is not the email address. [Audit section 7]
+- Credentials table must store encrypted blobs only, with AAD equivalent to accountId|purpose. [Audit section 8]
+- Body cache: Android default 200 MB with oldest-first trim and 2 MB per-message cap during prefetch. Desktop may choose a different cap only as an explicit product decision. [Audit section 7]
+- Draft migration: Android DraftCodec version 1 with max 1000 items. Desktop reading local Android drafts is PLANNED / NOT IMPLEMENTED. [Audit section 5.9]
+- Gmail ID map migration is PLANNED / NOT IMPLEMENTED; no Desktop Gmail account model exists yet. [Audit section 7]
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+
+- Room schema artifact for version 1.
+- Any existing Desktop data format.
+
+--------------------------------------------------------------------------------
+7. TESTING AND RELEASE PLAN
+--------------------------------------------------------------------------------
+
+PLANNED / NOT IMPLEMENTED
+
+- Port JVM unit tests first: transfer codec, credential logic, PIN/recovery policy, body/draft codecs, sync/repository logic, MIME parsing/sanitization, reply building, setup validation. [Audit section 10]
+- Replace Android fake-cipher tests with real OS-secret-store integration tests on each supported Desktop platform.
+- Add headless UI tests for setup, home, reader, compose, settings, lock, import/export dialogs. Android has no instrumented UI tests; this is a Desktop improvement, not a port. [Audit section 10]
+- Add transfer round-trip tests against Android-generated fixtures using synthetic data only.
+- Add negative security tests: no secrets in logs, no cleartext URLs, sanitizer blocks scripts/remote images, wrong AAD fails.
+- CI must run unit tests on every supported OS or use owner-approved matrix. Android CI currently runs testDebugUnitTest only. [Audit section 10]
+- Signing/notarization/update mechanism is OWNER CONFIRMATION REQUIRED; Android uses GitHub Secrets and apksigner for APK/AAB. [Audit section 10]
+
+--------------------------------------------------------------------------------
+8. OPEN DECISIONS AND UNKNOWNS
+--------------------------------------------------------------------------------
+
+OWNER CONFIRMATION REQUIRED
+
+- Desktop UI framework and distribution model.
+- OAuth client strategy for Desktop Gmail authorization.
+- OS secret-store abstraction and key-loss behavior.
+- Whether Desktop matches source (encrypted on-disk bodies) or privacy policy (memory-only bodies).
+- Terms of Service content and whether Desktop needs one.
+- Whether to preserve Android's non-atomic import behavior or improve it with explicit UX.
+- Whether to support webcam QR, file-only import, or clipboard/text import on Desktop.
+- Whether to add server-side search or keep cache-only search.
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+
+- KML specification.
+- Live provider behavior.
+- On-device Android behavior and screenshots.
+- Real Play Services consent behavior.
+- Certificate fingerprint claims in docs.
+- External URL reachability.
+
+--------------------------------------------------------------------------------
+9. DEFINITION OF DONE FOR DESKTOP PHASE 1
+--------------------------------------------------------------------------------
+
+PLANNED / NOT IMPLEMENTED
+
+A Desktop Phase 1 may be considered complete only when all of the following are true:
+
+1. Existing IMAP/SMTP account can be added with TLS/STARTTLS only.
+2. Gmail authorization works under an owner-approved Desktop flow with least privilege.
+3. Unified inbox, reader, compose, drafts, and settings screens are usable.
+4. Credentials, bodies, and drafts are stored using OS-backed authenticated encryption or equivalent owner-approved mechanism.
+5. HTML is sanitized and remote content is blocked by default.
+6. Android-exported kmail-accounts.kmail files can be imported byte-compatibly, including wrong-passphrase and unsupported-version behavior.
+7. Desktop-exported files can be imported by the audited Android build, verified with synthetic fixtures.
+8. No secret value, passphrase, token, or personal email is present in code, tests, or docs.
+9. Unit and headless UI tests run in CI on every supported Desktop target.
+10. Product status, Privacy Policy, and any Terms of Service are owner-confirmed before public release.
+
+END OF SPECIFICATION

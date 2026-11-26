@@ -1,0 +1,347 @@
+KMAIL BLOG AND PRODUCT DOCUMENTATION SOURCE MATERIAL
+
+Status: SOURCE MATERIAL / DRAFT INPUT — NOT PUBLISHED
+Date: 2026-11-26
+
+PURPOSE
+
+This file provides evidence-backed source material for blog posts, product documentation, Privacy Policy updates, and Terms of Service preparation. It is not a published policy and it is not legal advice. Every factual statement carries a source citation or an explicit status label.
+
+Source of truth:
+  desktop-planning/KMAIL_ANDROID_COMPLETE_AUDIT.txt
+The audit contains the full file:line evidence map used here.
+
+STATUS LEGEND
+
+IMPLEMENTED — VERIFIED IN SOURCE
+Android source evidence exists.
+
+PARTIALLY IMPLEMENTED
+Exists with gaps, stale docs, or caveats.
+
+PLANNED / NOT IMPLEMENTED
+Not present in source; future/product decision required.
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+No source evidence found.
+
+OWNER CONFIRMATION REQUIRED
+Documentation conflicts or product/legal decision required before publishing.
+
+SECRET HANDLING
+
+No real credentials, passwords, tokens, private keys, personal email addresses, passphrase values, or secret constant values are reproduced here. Placeholder addresses use example.invalid.
+
+--------------------------------------------------------------------------------
+1. EDITORIAL RULES FOR PUBLISHING
+--------------------------------------------------------------------------------
+
+- Do not publish the README claim "not usable as a mail client yet" as current without owner confirmation; source implements broad mail functionality and docs/PROGRESS.md reaches step 13.1. [Audit section 1]
+- Do not call the transfer format "KML". No KML artifact was found. Use "Kmail account transfer" or "the .kmail transfer file". [Audit section 9]
+- Do not say message bodies are memory-only. Android has an encrypted on-disk body cache with a 200 MB cap. [Audit sections 7 and 12]
+- Do not say remote images are always on by default. Source default is ASK with no trusted-sender writer; docs/PROGRESS.md contains a stale ALWAYS note. [Audit sections 5.7 and 12]
+- Do not say Desktop exists. All Desktop items are PLANNED / NOT IMPLEMENTED. [Desktop spec]
+- Do not say Terms of Service exist. No ToS source was found. [Audit section 12]
+- Do not reproduce the contact address from docs/PRIVACY_POLICY.md:33 in drafts that are not explicitly approved; it is cited here by file:line only.
+- Do not imply on-device testing, live provider testing, or external URL reachability was performed. Those are NOT VERIFIED — SOURCE EVIDENCE NOT FOUND. [Audit section 13]
+
+--------------------------------------------------------------------------------
+2. FACT BASE FOR BLOG / PRODUCT COPY
+--------------------------------------------------------------------------------
+
+2.1 What Kmail is
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Kmail is an independent, privacy-focused Android email client by TheKami. [README.md:3]
+- It connects to existing mail accounts over IMAP and SMTP. It is not a hosting service. [README.md:4]
+- Stack: Kotlin, Jetpack Compose, Material 3. [README.md:6]
+- Local-first positioning: mail and credentials stay on the device. [README.md:7]
+- Package: com.kmail.thekami. [README.md:8]
+- GPLv3 licensed. [README.md:20-22; LICENSE:1-2]
+
+2.2 What the app can do today
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Add an existing account with IMAP/SMTP credentials or authorize Gmail through Google Play Services with gmail.modify scope. [Audit sections 5.1-5.3 and 6]
+- Unified inbox across accounts plus starred, unread, and folder views. [Audit section 5.6]
+- Search and filter the loaded list, sort messages, bulk select, mark read/unread, star/unstar, move, archive, delete, and undo. [Audit section 5.6]
+- Reader with sanitized HTML, details, attachments, reply/reply-all/forward, unsubscribe link, dark view, and show-pictures control. [Audit section 5.7]
+- Composer with attachments, signature preview, recipient suggestions, and local drafts. [Audit sections 5.8-5.9]
+- Settings for accounts, signature, appearance, language, sync, privacy/App Lock, inbox, links, and about. [Audit section 5.10]
+- Background sync with configurable interval, notifications, and hide-content option. [Audit sections 5.10 and 7]
+- App Lock with PIN, optional biometrics, recovery questions, and auto-lock. [Audit sections 5.11 and 8]
+- Encrypted account transfer by QR code or file for password-based IMAP/SMTP accounts. [Audit section 9]
+
+PARTIALLY IMPLEMENTED
+
+- Search is cache-only; it does not search message bodies or the server. [Audit section 7]
+- Undo is time-limited and Android drops the pending action if the app closes. [Audit section 7]
+- Starred/unread views cover cached messages only. [Audit section 7]
+- Gmail accounts cannot be exported through the account-transfer file because no IMAP/SMTP secrets are stored. [Audit section 9.5]
+
+2.3 Privacy posture
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Permissions are INTERNET, CAMERA, READ_CONTACTS, POST_NOTIFICATIONS; camera hardware is optional. [Audit section 3]
+- Cleartext traffic is disabled. [Audit section 3]
+- allowBackup=false; cloud backup and device transfer exclude all app domains. [Audit section 3]
+- Credentials are encrypted with an Android Keystore AES-256-GCM key and stored as IV/ciphertext, not plaintext. [Audit section 8]
+- Message bodies, drafts, and credentials use authenticated encryption with context binding. [Audit section 8]
+- HTML email is sanitized: scripts, frames, handlers, unsafe URLs, and remote images are restricted; a CSP is added. [Audit section 5.7]
+- No analytics, crash reporting, ads, or third-party tracking code was found in the declared dependencies or source inventory. [Audit section 8]
+- The app links to privacy policy and how-to guide in-app. [Audit section 5.12]
+
+OWNER CONFIRMATION REQUIRED
+
+- Privacy policy body-storage wording conflicts with source. [Audit section 12]
+- Privacy policy remote-content wording is supported by source, but docs/PROGRESS.md contains a contradictory stale note. [Audit section 12]
+
+2.4 Transfer shorthand
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Android exports a binary file named kmail-accounts.kmail with MIME application/octet-stream. [Audit section 9]
+- QR text is URL-safe Base64 without padding of the encrypted bytes. [Audit section 9.3]
+- Files are raw encrypted bytes. [Audit section 9.3]
+- Transfer includes email, display name, color, IMAP/SMTP endpoints, and both passwords. [Audit section 9.5]
+- Transfer excludes messages, drafts, contacts, preferences, PIN, recovery answers, account id, provider type, and Gmail tokens. [Audit section 9.5]
+- Import tests IMAP then SMTP before adding each account and reports per-account outcomes. [Audit section 9.4]
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+
+- Any .kml format. [Audit section 9]
+
+--------------------------------------------------------------------------------
+3. DRAFT BLOG POST OUTLINE — PRODUCT INTRODUCTION
+--------------------------------------------------------------------------------
+
+Status: PLANNED / NOT IMPLEMENTED as published content; facts below are verified.
+
+Working title:
+  Kmail: an independent email client that keeps your mail on your device
+
+Suggested body:
+
+  Kmail is an independent, privacy-focused Android email client by TheKami. It connects to the email accounts you already have over IMAP and SMTP; it does not host mail itself. [Audit section 2.1]
+
+  The app is local-first. Credentials are encrypted with a key held by the Android Keystore, cached message bodies and drafts are encrypted on device, and the manifest disables backup and device-transfer extraction of app data. [Audit sections 3, 7, and 8]
+
+  Kmail supports a unified inbox, folder views, search and filters, a sanitized reader, composing with attachments and local drafts, background sync with notifications, and an optional App Lock with PIN, biometrics, and recovery questions. [Audit section 2.2]
+
+  Privacy details are intentional: cleartext traffic is disabled, IMAP/SMTP connections use TLS or STARTTLS only, Gmail authorization uses the gmail.modify scope, remote email images are blocked unless allowed, and HTML is sanitized before display. [Audit sections 3, 5.7, and 6]
+
+  For moving accounts between devices, Kmail can export selected password-based accounts as a passphrase-encrypted file or QR code. The transfer carries only the fields needed to sign in on the other device; it does not include your messages, drafts, contacts, or App Lock answers. [Audit section 9]
+
+  Kmail is licensed GPLv3. [Audit section 2.1]
+
+Do-not-include in this post:
+- "Not usable as a mail client yet" without owner confirmation.
+- "Bodies are memory-only".
+- "Remote images are always on by default".
+- "KML transfer format".
+- Any claim of Desktop availability.
+
+--------------------------------------------------------------------------------
+4. DRAFT BLOG POST OUTLINE — ACCOUNT TRANSFER HOW-TO
+--------------------------------------------------------------------------------
+
+Status: PLANNED / NOT IMPLEMENTED as published content; facts below are verified.
+
+Working title:
+  Moving Kmail accounts to another device
+
+Suggested structure:
+
+1. What can be moved
+   - Password-based IMAP/SMTP accounts with both IMAP and SMTP passwords available. [Audit section 9.5]
+   - Email address, display name, color, incoming/outgoing server settings, username, and both passwords. [Audit section 9.2]
+   - Not moved: messages, drafts, contacts, settings, App Lock PIN/recovery, account id, provider type, or Gmail tokens. [Audit section 9.5]
+
+2. Export on Android
+   - Open Settings, then Accounts, then the transfer row; or open an account detail and choose transfer. [Audit section 9.3]
+   - Select accounts and enter a passphrase of at least 10 characters twice. [Audit section 9.3]
+   - If App Lock is enabled, verify the PIN. [Audit section 9.3]
+   - Show the QR code if the encoded text fits, or save the file. The verified filename is kmail-accounts.kmail. [Audit section 9.3]
+   - Keep the passphrase out of screenshots and chat history; the app protects the dialog from screenshots where Android supports it. [Audit section 9.3]
+
+3. Import on another device
+   - In setup, choose "other ways", then scan the QR code or pick the file. [Audit section 9.4]
+   - Enter the passphrase. [Audit section 9.4]
+   - Kmail tests incoming mail first, then outgoing mail, then adds the account. Results are shown per account. [Audit section 9.4]
+
+4. Caveats
+   - Duplicate accounts are reported as already existing; they are not merged. [Audit section 9.4]
+   - If one account in a multi-account transfer fails, accounts already added remain. This is not an all-or-nothing restore. [Audit section 9.4]
+   - Gmail accounts using Google authorization do not carry passwords and therefore cannot be exported through this path. [Audit section 9.5]
+
+Terminology note for editors:
+  Use ".kmail transfer file". Do not use "KML"; no KML source evidence exists. [Audit section 9]
+
+--------------------------------------------------------------------------------
+5. PRODUCT HELP DOCUMENTATION
+--------------------------------------------------------------------------------
+
+5.1 Getting started
+
+PLANNED / NOT IMPLEMENTED as published help; facts verified.
+
+- Step 1: Choose Google or another mail provider.
+- Step 2: For other providers, enter email and password, then confirm IMAP and SMTP settings. Only SSL_TLS and STARTTLS are offered. [Audit section 5.3]
+- Step 3: Wait for connection test to finish, then open the inbox. [Audit section 5.4]
+- Step 4: Optional: add another account from Connected or Settings. [Audit sections 5.1 and 5.4]
+
+5.2 Reading mail safely
+
+- Remote images are blocked unless allowed. The reader shows a "Show pictures" bar when blocked content exists. [Audit section 5.7]
+- HTML is sanitized and scripts/unsafe URLs are removed. [Audit section 5.7]
+- Links open according to the Links setting: in-app Custom Tabs or external browser. [Audit section 5.10]
+- Unsubscribe opens the link or mail app after confirmation; it does not perform one-click POST. [Audit section 5.7]
+
+5.3 Composing and drafts
+
+- Compose supports recipients, subject, body, attachments, and signature preview. [Audit section 5.8]
+- Drafts are stored on the device only and encrypted; they are not uploaded to the server. [Audit section 5.9]
+
+5.4 Sync and notifications
+
+- Background sync can be enabled with intervals of 5, 10, 15, 30, or 60 minutes. [Audit section 5.10]
+- Notifications can hide content. [Audit sections 5.10 and 7]
+- Notification permission is requested once on first Home display on Android 13+. [Audit section 4]
+
+5.5 App Lock
+
+- PIN must be 4-8 digits and cannot be all-same, sequential, or a common PIN. [Audit section 8]
+- Failed attempts cause increasing lockouts. [Audit section 8]
+- Recovery questions can be configured; answers are hashed. [Audit section 8]
+- Known caveat: Android PIN/recovery hashes are not Keystore-bound, and recovery questions are stored in plaintext so they can be displayed. [Audit section 8]
+
+--------------------------------------------------------------------------------
+6. PRIVACY POLICY SOURCE MATERIAL
+--------------------------------------------------------------------------------
+
+Status: SOURCE MATERIAL — OWNER CONFIRMATION REQUIRED BEFORE PUBLICATION
+
+6.1 Claims supported by source
+
+IMPLEMENTED — VERIFIED IN SOURCE
+
+- Kmail does not host accounts; it connects to accounts the user already has. [Audit section 2.1]
+- Connections go directly from the device to the IMAP/SMTP servers the user enters; no TheKami mail relay is in source. [Audit sections 2.1 and 6]
+- Credentials are encrypted with Android Keystore AES-256-GCM and stored only on device as IV/ciphertext. [Audit section 8]
+- Credentials are sent only to the user's mail provider for authentication. [Audit sections 6 and 8]
+- Message headers synced from the server are stored in a local database. [Audit section 7]
+- Message bodies opened or prefetched are stored in encrypted local files under filesDir/bodies, capped at 200 MB. [Audit section 7]
+- Drafts are stored on device only, encrypted, and not uploaded. [Audit section 5.9]
+- App Lock stores a salted hash, never the PIN. [Audit section 8]
+- Attachments are read when picked and sent to chosen recipients; saved files go where the user chooses. [Audit sections 5.7 and 5.8]
+- Remote content is blocked by default in the current source; the reader can allow it per message. [Audit sections 5.7 and 12]
+- No analytics, crash reporting, ads, or advertising identifiers were found in source or declared dependencies. [Audit section 8]
+- No contacts are uploaded; contact suggestions read local contacts only after permission. [Audit sections 3 and 5.8]
+- Removing an account deletes saved password and cached local mail by cascade. [Audit section 7]
+- Data extraction rules exclude all app domains from cloud backup and device transfer. [Audit section 3]
+
+6.2 Claims that must be corrected or owner-confirmed
+
+OWNER CONFIRMATION REQUIRED
+
+- docs/PRIVACY_POLICY.md:11 says message bodies are kept in memory only. Source has encrypted on-disk body cache. [Audit section 12]
+- docs/PROGRESS.md:220-223 says remote pictures are on by default via ImageMode.ALWAYS, but source defaults to ASK and no UI writes the trusted set. [Audit sections 5.7 and 12]
+- The unused settings_privacy_url string points to a different URL than the in-app legal link. [Audit section 12]
+- The local policy contact address is present but not reproduced here; owner should confirm it before publication. [Audit section 12]
+
+6.3 Suggested corrected body-storage wording
+
+DRAFT / OWNER CONFIRMATION REQUIRED
+
+  Message headers you sync are stored in a local database on your device. To let messages open quickly and offline, Kmail also stores recently downloaded message bodies in encrypted files on your device, with an on-device size limit. Older cached bodies are removed automatically when the limit is reached.
+
+6.4 Suggested corrected remote-content wording
+
+DRAFT / OWNER CONFIRMATION REQUIRED
+
+  Images and other content loaded from the internet inside emails are blocked by default. If you choose "Show pictures" for a message, your device may contact the sender's servers, which can reveal that and when the message was opened.
+
+--------------------------------------------------------------------------------
+7. TERMS OF SERVICE SOURCE MATERIAL
+--------------------------------------------------------------------------------
+
+Status: PLANNED / NOT IMPLEMENTED
+
+NOT VERIFIED — SOURCE EVIDENCE NOT FOUND
+
+- No Terms of Service document, URL, string resource, or in-app link was found. [Audit section 12]
+- Do not publish a ToS link in the app until a document exists and is owner-approved.
+
+Suggested sections to draft with owner/legal review:
+
+1. Service description
+   - Kmail is an email client, not an email hosting service. [Audit section 2.1]
+   - The software is GPLv3 licensed. [Audit section 2.1]
+
+2. User responsibilities
+   - User provides their own mail account credentials and is responsible for complying with their provider's terms.
+   - User is responsible for choosing a strong transfer passphrase; Android requires at least 10 characters. [Audit section 9.3]
+
+3. Data and privacy
+   - Link to the confirmed Privacy Policy; do not duplicate stale wording. [Audit section 12]
+
+4. Third-party services
+   - Email providers and Google authorization are third-party services with their own terms. [Audit sections 6 and 9.5]
+
+5. Disclaimers and liability
+   - Owner/legal language required; no source evidence exists for specific wording.
+
+6. Changes
+   - Owner/legal language required.
+
+--------------------------------------------------------------------------------
+8. QUICK FAQ COPY
+--------------------------------------------------------------------------------
+
+Q: Does Kmail host email?
+A: No. Kmail connects to the mail account you already have. It is not a hosting service. [Audit section 2.1]
+
+Q: Are my mailbox passwords stored in plain text?
+A: No. Android source encrypts them with an Android Keystore AES-256-GCM key and stores only encrypted blobs. [Audit section 8]
+
+Q: Are my messages stored on the device?
+A: Yes. Headers are stored in a local database and recently downloaded bodies are stored in encrypted local files with a size limit. [Audit sections 7 and 12]
+
+Q: Are remote images loaded automatically?
+A: In the current source, they are blocked unless you allow them for a message. [Audit sections 5.7 and 12]
+
+Q: Can I move accounts to a new phone?
+A: Yes, for accounts with stored IMAP and SMTP passwords. You can export by QR or file and import with the passphrase. Gmail accounts authorized through Google are not included in that transfer. [Audit section 9]
+
+Q: Is the transfer file called KML?
+A: No verified KML format exists in the source. The Android file is kmail-accounts.kmail. [Audit section 9]
+
+Q: Is there a Desktop version?
+A: Desktop work is PLANNED / NOT IMPLEMENTED. See desktop-planning/KMAIL_DESKTOP_PORTING_SPEC.txt. [Desktop spec]
+
+Additional UI details confirmed by the final surface pass:
+
+- Server setup offers SSL_TLS/STARTTLS; the authentication method field is read-only because only NORMAL_PASSWORD is modeled. [Audit section 5.13]
+- Compose uses a plain-text body editor; rich-text editing is available for stored email signatures only. [Audit section 5.13]
+- The reader WebView disables JavaScript, file/content/storage access, filters link schemes, and blocks network loads unless remote images are allowed. [Audit section 5.13]
+- Link opener blocks javascript: and intent: URLs and respects the in-app versus external browser preference. [Audit section 5.13]
+- Rate prompts appear only on Play Store installs and are governed by usage thresholds. [Audit section 5.13]
+
+--------------------------------------------------------------------------------
+9. APPROVAL CHECKLIST BEFORE ANY PUBLICATION
+--------------------------------------------------------------------------------
+
+- Confirm product status wording against README/PROGRESS conflict. [Audit section 1]
+- Confirm Privacy Policy body-storage wording. [Audit section 12]
+- Confirm remote-image wording against source default and stale docs note. [Audit sections 5.7 and 12]
+- Confirm which privacy URL is canonical: in-app LegalLinks URL versus unused settings_privacy_url. [Audit section 12]
+- Confirm contact address from docs/PRIVACY_POLICY.md:33; value not reproduced here. [Audit section 12]
+- Create and approve Terms of Service or explicitly decide not to publish one. [Audit section 12]
+- Avoid "KML" terminology unless a separate KML spec is supplied. [Audit section 9]
+- Do not claim on-device, live-provider, Desktop, or external URL verification. [Audit section 13]
+- Confirm no secret, token, password, passphrase, private key, or personal email is present in the final published text.
+
+END OF DOCUMENTATION SOURCE MATERIAL
