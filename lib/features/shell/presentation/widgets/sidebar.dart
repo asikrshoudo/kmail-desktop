@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kmail_desktop/design_system/tokens/app_colors.dart';
 import 'package:kmail_desktop/design_system/tokens/app_radii.dart';
 import 'package:kmail_desktop/design_system/tokens/app_spacing.dart';
+import 'package:kmail_desktop/features/accounts/presentation/account_setup_dialog.dart';
 import 'package:kmail_desktop/features/inbox/presentation/inbox_controller.dart';
+import 'package:kmail_desktop/features/inbox/presentation/inbox_state.dart';
 import 'package:kmail_desktop/shared/models/folder_item.dart';
-import 'package:kmail_desktop/shared/models/mail_models.dart';
 
 class Sidebar extends ConsumerWidget {
   const Sidebar({super.key});
@@ -15,13 +16,14 @@ class Sidebar extends ConsumerWidget {
     final inbox = ref.watch(inboxControllerProvider);
     final colors = context.appColors.tokens;
 
-    return Container(
+    return ColoredBox(
       color: colors.surface,
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
+              AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm,
+            ),
             child: Row(
               children: [
                 Container(
@@ -29,8 +31,10 @@ class Sidebar extends ConsumerWidget {
                   height: 34,
                   decoration: BoxDecoration(
                     color: colors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    border: Border.all(color: colors.border),
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: Icon(Icons.mail_outline_rounded, color: colors.primary),
                 ),
                 const SizedBox(width: 10),
@@ -41,8 +45,8 @@ class Sidebar extends ConsumerWidget {
                       Text('Kmail', style: Theme.of(context).textTheme.titleMedium),
                       Text(
                         inbox.isUnified
-                            ? 'All accounts (mock)'
-                            : (inbox.activeAccount?.email ?? 'Account'),
+                            ? 'All accounts'
+                            : (inbox.activeAccount?.email ?? 'No account connected'),
                         style: Theme.of(context).textTheme.bodySmall,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -65,34 +69,24 @@ class Sidebar extends ConsumerWidget {
                   _SidebarItem(
                     item: folder,
                     selected: inbox.selectedView == folder.view,
-                    onTap: () => ref
-                        .read(inboxControllerProvider.notifier)
-                        .selectView(folder.view),
+                    onTap: () => ref.read(inboxControllerProvider.notifier).selectView(folder.view),
                   ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
-                  child: Text('LABELS',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5)),
-                ),
-                _LabelRow(label: 'Work', color: colors.info),
-                _LabelRow(label: 'Personal', color: colors.accent),
-                _LabelRow(label: 'Receipts', color: colors.warning),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.sm),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text(
-                        'Add account is planned. Real IMAP/SMTP connection is not implemented in this Phase 1 foundation.')));
-              },
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Add account'),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const AccountSetupDialog(),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add account'),
+              ),
             ),
           ),
         ],
@@ -109,30 +103,29 @@ class _AccountSwitcher extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors.tokens;
     final active = inbox.activeAccount;
-    final label = inbox.isUnified ? 'All Inboxes' : (active?.name ?? 'Account');
-    final email = inbox.isUnified ? 'Unified view across accounts' : (active?.email ?? '');
+    final label = inbox.isUnified ? 'All Inboxes' : (active?.displayName ?? 'No account');
+    final email = inbox.isUnified
+        ? (inbox.hasAccounts ? 'Unified view across accounts' : 'Add an account to get started')
+        : (active?.email ?? 'Connect an email account');
     final color = inbox.isUnified ? colors.primary : Color(active?.colorValue ?? 0xFF1F4B99);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(AppRadii.md),
+      borderRadius: BorderRadius.circular(AppRadii.lg),
       onTap: () => _showAccountSheet(context, ref),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
           color: colors.surfaceMuted,
-          borderRadius: BorderRadius.circular(AppRadii.md),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           border: Border.all(color: colors.border),
         ),
+        clipBehavior: Clip.antiAlias,
         child: Row(
           children: [
             CircleAvatar(
               radius: 16,
               backgroundColor: color,
-              child: Icon(
-                inbox.isUnified ? Icons.all_inbox_rounded : Icons.person_rounded,
-                size: 16,
-                color: Colors.white,
-              ),
+              child: Icon(inbox.isUnified ? Icons.all_inbox_rounded : Icons.person_rounded, size: 16, color: Colors.white),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -155,10 +148,11 @@ class _AccountSwitcher extends ConsumerWidget {
     final inbox = ref.read(inboxControllerProvider);
     showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,9 +160,10 @@ class _AccountSwitcher extends ConsumerWidget {
                 Text('Accounts', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
                   leading: const CircleAvatar(child: Icon(Icons.all_inbox_rounded)),
                   title: const Text('All Inboxes'),
-                  subtitle: const Text('Unified inbox across configured accounts'),
+                  subtitle: const Text('Unified inbox across connected accounts'),
                   trailing: inbox.isUnified ? const Icon(Icons.check_rounded) : null,
                   onTap: () {
                     ref.read(inboxControllerProvider.notifier).selectAccount(allAccountsId);
@@ -177,8 +172,12 @@ class _AccountSwitcher extends ConsumerWidget {
                 ),
                 for (final a in inbox.accounts)
                   ListTile(
-                    leading: CircleAvatar(backgroundColor: Color(a.colorValue), child: Text(a.name.substring(0, 1), style: const TextStyle(color: Colors.white))),
-                    title: Text(a.name),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
+                    leading: CircleAvatar(
+                      backgroundColor: Color(a.colorValue),
+                      child: Text(a.displayName.isNotEmpty ? a.displayName[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white)),
+                    ),
+                    title: Text(a.displayName),
                     subtitle: Text(a.email),
                     trailing: inbox.selectedAccountId == a.id ? const Icon(Icons.check_rounded) : null,
                     onTap: () {
@@ -188,9 +187,13 @@ class _AccountSwitcher extends ConsumerWidget {
                   ),
                 const Divider(),
                 ListTile(
-                  leading: const Icon(Icons.info_outline_rounded),
-                  title: const Text('Account data is isolated by accountId in mock state.'),
-                  subtitle: const Text('Real account add/remove/auth is planned.'),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
+                  leading: const Icon(Icons.add_rounded),
+                  title: const Text('Add account'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog<void>(context: context, barrierDismissible: false, builder: (_) => const AccountSetupDialog());
+                  },
                 ),
               ],
             ),
@@ -210,49 +213,45 @@ class _SidebarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors.tokens;
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
         color: selected ? colors.selection : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        child: ListTile(
-          dense: true,
-          selected: selected,
-          selectedTileColor: Colors.transparent,
-          leading: Icon(item.icon, size: 20, color: selected ? colors.primary : colors.textSecondary),
-          title: Text(item.label),
-          trailing: item.count > 0
-              ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: selected ? colors.primary.withValues(alpha: 0.12) : colors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text('${item.count}', style: Theme.of(context).textTheme.labelSmall),
-                )
-              : null,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
           onTap: onTap,
+          customBorder: shape,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(item.icon, size: 20, color: selected ? colors.primary : colors.textSecondary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                          color: selected ? colors.textPrimary : colors.textPrimary,
+                        ),
+                  ),
+                ),
+                if (item.count > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: selected ? colors.primary.withValues(alpha: 0.12) : colors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                      border: Border.all(color: selected ? colors.primary.withValues(alpha: 0.18) : colors.border),
+                    ),
+                    child: Text('${item.count}', style: Theme.of(context).textTheme.labelSmall),
+                  ),
+              ],
+            ),
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _LabelRow extends StatelessWidget {
-  const _LabelRow({required this.label, required this.color});
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 10),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-        ],
       ),
     );
   }

@@ -81,11 +81,12 @@ class _AppShellState extends ConsumerState<AppShell> {
                         color: settings.blurEnabled
                             ? colors.surface.withValues(alpha: 0.96)
                             : colors.surface,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: colors.border),
                       ),
+                      clipBehavior: Clip.antiAlias,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                         child: isCompact
                             ? _CompactLayout(onCompose: _openCompose)
                             : Row(

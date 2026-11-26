@@ -1,55 +1,40 @@
 # Security
 
-## Phase 1 scope
+## Scope
 
-Phase 1 is a **mock UI foundation**. It does **not** connect to real email accounts, store real credentials, or sync real mailboxes.
+Kmail Desktop is a local-first Windows desktop email client. It connects directly from the user's device to configured IMAP/SMTP servers. It does **not** provide a Kmail-hosted email backend and has no TheKami telemetry.
 
 ## Implemented controls
 
-### HTML email sanitization
+### Credential handling
+- Account passwords are stored through `CredentialStorage`; production uses `flutter_secure_storage` (OS-backed secure storage on Windows).
+- Account config is stored locally in `SharedPreferences` and **does not include passwords**.
+- Passwords are not intentionally logged by app code. Connection test/setup UI uses password fields with obscured input.
 
-Email HTML is treated as untrusted. `HtmlSanitizer` applies restrictive cleanup before rendering:
-- Removes `<script>`, `<style>`, `<iframe>`, `<object>`, `<embed>`, `<form>` blocks/tags
-- Removes inline event handlers (`on*` attributes)
-- Blocks unsafe `javascript:` and `data:` URL attributes in `href/src`
-- Blocks remote images by default; replaces with placeholder unless user allows
-- Converts HTML to plain text for fallback/testing utility
+### HTML/email content safety
+- Email HTML is treated as untrusted and sanitized by `HtmlSanitizer` before rendering.
+- Removes script/style/iframe/object/embed/form and inline event handlers; blocks unsafe `javascript:` and `data:` URL attributes.
+- Remote images are blocked by default; per-message/global opt-in exists as explicit privacy tradeoff.
+- External links require user confirmation and only allow `http`, `https`, `mailto`.
 
-### Remote images / tracking protection
+### Attachment safety
+- Attachments are treated as untrusted files.
+- Preview is read-only and bounded; unsupported/large previews fall back safely.
+- Save uses a user-selected path via file picker; no automatic execution.
+- Compose attaches local files selected by user.
 
-- Global default: **blocked**.
-- Per-message override: “Load images”.
-- Global setting can allow remote images (privacy tradeoff, clearly labeled).
-- No automatic remote image loading before user decision.
+### Networking/TLS
+- IMAP/SMTP connections use `enough_mail` with configured SSL/TLS or STARTTLS. No certificate verification bypass is added by app code.
+- Users can configure insecure transport only if they explicitly select it; this is not recommended.
 
-### External links
+### Release/signing
+- GitHub Actions can optionally Authenticode-sign executables/installers only when valid secrets are supplied.
+- No certificates, private keys, passwords, or fake signing artifacts are committed.
+- No SmartScreen/Defender bypasses or exclusion instructions are included.
 
-- Unsafe URL schemes blocked (`javascript:`, `data:text/html`).
-- Allowed schemes: `http`, `https`, `mailto`.
-- External link opening requires explicit user confirmation via dialog before launching browser.
-
-### Attachment preview safety
-
-- Preview is read-only and bounded (10 MB guard in Phase 1 service).
-- HTML attachment preview uses same sanitization with remote images disabled.
-- Unsupported types show safe fallback; no execution.
-
-### Secrets/credentials
-
-- No real credentials collected or stored.
-- No secrets committed; no private signing keys/certificates committed.
-- CI supports optional Authenticode signing only through GitHub Actions secrets (WINDOWS_CERTIFICATE_BASE64, WINDOWS_CERTIFICATE_PASSWORD, optional WINDOWS_CERTIFICATE_SHA1, WINDOWS_TIMESTAMP_URL). Unsigned builds are clearly labeled.
-- Future phases must use OS-backed secure storage and encrypted local DB fields for secrets.
-
-## Not implemented yet (planned)
-
-- End-to-end email encryption/signing
-- OS keychain/credential vault integration
-- Encrypted local database/body cache
-- MIME parsing hardening on real messages
-- Sandboxed WebView process isolation configuration beyond current renderer
-- Security audit/fuzzing for real mail corpus
-
-## Reporting
-
-For security issues, avoid posting secrets/public exploit details. Owner should define private reporting channel before public release.
+## Known limitations / planned hardening
+- No OAuth flows yet; some providers require app passwords.
+- IMAP flag/move sync is best-effort and not a full offline operation queue.
+- Local message cache is stored in app support JSON for practicality; it is not claimed as end-to-end encrypted at rest.
+- No formal security audit/fuzzing against real-world malicious mail corpus.
+- Attachment download behavior depends on what was fetched/decoded; very large or complex MIME cases need live verification.

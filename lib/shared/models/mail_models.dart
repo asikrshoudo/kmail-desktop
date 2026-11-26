@@ -33,12 +33,22 @@ class EmailAddress {
 
 @immutable
 class Attachment {
-  const Attachment({required this.id, required this.name, required this.type, required this.sizeBytes, this.previewText});
+  const Attachment({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.sizeBytes,
+    this.previewText,
+    this.localPath,
+    this.bytes,
+  });
   final String id;
   final String name;
   final AttachmentType type;
   final int sizeBytes;
   final String? previewText;
+  final String? localPath;
+  final List<int>? bytes;
   String get extension => name.contains('.') ? name.split('.').last.toLowerCase() : '';
 }
 
@@ -63,6 +73,8 @@ class EmailMessage {
     this.attachments = const [],
     this.hasRemoteImages = false,
     this.isDraft = false,
+    this.remoteUid,
+    this.remoteMailbox,
   });
 
   final String id;
@@ -83,6 +95,8 @@ class EmailMessage {
   final List<Attachment> attachments;
   final bool hasRemoteImages;
   final bool isDraft;
+  final int? remoteUid;
+  final String? remoteMailbox;
 
   bool get hasAttachments => attachments.isNotEmpty;
 
@@ -105,6 +119,8 @@ class EmailMessage {
     List<Attachment>? attachments,
     bool? hasRemoteImages,
     bool? isDraft,
+    int? remoteUid,
+    String? remoteMailbox,
   }) {
     return EmailMessage(
       id: id ?? this.id,
@@ -125,16 +141,26 @@ class EmailMessage {
       attachments: attachments ?? this.attachments,
       hasRemoteImages: hasRemoteImages ?? this.hasRemoteImages,
       isDraft: isDraft ?? this.isDraft,
+      remoteUid: remoteUid ?? this.remoteUid,
+      remoteMailbox: remoteMailbox ?? this.remoteMailbox,
     );
   }
 }
 
 @immutable
 class MailAccount {
-  const MailAccount({required this.id, required this.name, required this.email, required this.colorValue, this.isDefault = false});
+  const MailAccount({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.colorValue,
+    this.isDefault = false,
+    this.isDemo = false,
+  });
   final String id;
   final String name;
   final String email;
   final int colorValue;
   final bool isDefault;
+  final bool isDemo;
 }

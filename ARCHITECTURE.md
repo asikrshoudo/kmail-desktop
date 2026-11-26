@@ -2,8 +2,8 @@
 
 ## Status
 
-**Implemented (Phase 1 foundation):** desktop UI shell, design system, mock inbox state, HTML sanitization/reader, attachment preview abstraction, settings persistence, tests, cloud CI.  
-**Planned:** real email engine, encrypted local storage, sync, OAuth, MIME/attachment parsing, notifications, cross-platform packaging.
+**Implemented:** Windows desktop UI shell, design system, account setup, IMAP/SMTP mail service via `enough_mail`, secure credential storage abstraction, local config/cache/drafts, HTML sanitization, attachment preview/save plumbing, tests, GitHub Actions Windows build.  
+**Partial/unverified:** full bidirectional sync, server-backed actions across all providers, remote attachment download fidelity, OAuth, live end-to-end provider verification, code signing.
 
 ## Principles
 
@@ -29,8 +29,8 @@ lib/
   features/
     shell/presentation/ (app shell, toolbar, sidebar, message list)
     inbox/
-      data/mock_mail_repository.dart
       presentation/inbox_controller.dart
+      presentation/inbox_state.dart
     reader/
       html/html_sanitizer.dart
       presentation/reader_pane.dart
@@ -51,6 +51,12 @@ lib/
 - `SettingsController` persists UI preferences via `shared_preferences`.
 - `InboxController` owns mock mailbox state and actions (search/filter/sort/select/star/read/archive/delete/draft/send-mock).
 - UI widgets consume state via providers; business-like mock operations are not embedded in widget build methods.
+
+## Real mail
+
+- `AccountStore` persists account config in `SharedPreferences` and passwords via `CredentialStorage` (`flutter_secure_storage` in production, memory in tests).
+- `MailService` uses `enough_mail` for IMAP fetch/test and SMTP send; `MailMimeMapper` maps MIME <-> app models.
+- `InboxController` owns account state, cache (`kmail_cache.json` in app support), refresh, selection, local mutations, and best-effort IMAP flag/move sync.
 
 ## HTML rendering
 
@@ -81,4 +87,5 @@ lib/
 | `shared_preferences` for settings | Lightweight local persistence for UI settings; no DB needed yet | Implemented |
 | `window_manager` | Desktop window size/min-size control on Windows | Implemented |
 | No local Flutter required | Owner constraint; GitHub Actions installs Flutter on runner | Implemented in workflow |
-| PDF preview fallback | Avoid false claim; verify Windows-compatible PDF renderer in CI before enabling | Fallback implemented |ويلق широк
+| PDF preview fallback | Avoid false claim; verify Windows-compatible PDF renderer in CI before enabling | Fallback implemented |
+ويلق широк

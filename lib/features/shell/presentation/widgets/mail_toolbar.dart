@@ -34,10 +34,20 @@ class MailToolbar extends ConsumerWidget {
               label: const Text('Compose')),
           const SizedBox(width: AppSpacing.sm),
           IconButton(
-              tooltip: 'Refresh (mock)',
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Mock refresh complete.'))),
-              icon: const Icon(Icons.refresh_rounded)),
+              tooltip: 'Refresh / Sync',
+              onPressed: inbox.isSyncing
+                  ? null
+                  : () async {
+                      await ref.read(inboxControllerProvider.notifier).refresh();
+                      if (!context.mounted) return;
+                      final s = ref.read(inboxControllerProvider);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(s.error ?? 'Sync complete.'),
+                      ));
+                    },
+              icon: inbox.isSyncing
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.refresh_rounded)),
           IconButton(
               tooltip: 'Select all visible',
               onPressed:
@@ -80,7 +90,7 @@ class MailToolbar extends ConsumerWidget {
                 onChanged: ref.read(inboxControllerProvider.notifier).setSearch,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search_rounded),
-                  hintText: 'Search mail, senders, or subjects',
+                  hintText: 'Search sender, subject, or message',
                   suffixIcon: inbox.searchQuery.isNotEmpty
                       ? IconButton(
                           tooltip: 'Clear search',

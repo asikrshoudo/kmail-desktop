@@ -1,9 +1,13 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:kmail_desktop/design_system/tokens/app_colors.dart';
 import 'package:kmail_desktop/design_system/tokens/app_radii.dart';
 import 'package:kmail_desktop/design_system/tokens/app_spacing.dart';
 import 'package:kmail_desktop/features/attachments/preview/attachment_preview_dialog.dart';
 import 'package:kmail_desktop/shared/models/mail_models.dart';
+import 'package:path/path.dart' as p;
 
 class AttachmentList extends StatelessWidget {
   const AttachmentList({super.key, required this.attachments});
@@ -42,40 +46,52 @@ class _AttachmentCard extends StatelessWidget {
               Icon(_iconFor(attachment.type), color: colors.primary),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(attachment.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall),
+                child: Text(attachment.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleSmall),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-              '${attachment.extension.toUpperCase()} • ${_formatBytes(attachment.sizeBytes)}',
-              style: Theme.of(context).textTheme.bodySmall),
+          Text('${attachment.extension.toUpperCase()} • ${_formatBytes(attachment.sizeBytes)}', style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           Row(
             children: [
               OutlinedButton(
-                onPressed: () => showDialog<void>(
-                    context: context,
-                    builder: (_) =>
-                        AttachmentPreviewDialog(attachment: attachment)),
+                onPressed: () => showDialog<void>(context: context, builder: (_) => AttachmentPreviewDialog(attachment: attachment)),
                 child: const Text('Preview'),
               ),
               const SizedBox(width: 8),
-              TextButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text(
-                            'Save/download is planned for a future phase.'))),
-                child: const Text('Save'),
-              ),
+              TextButton(onPressed: () => _save(context), child: const Text('Save')),
             ],
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _save(BuildContext context) async {
+    final bytes = attachment.bytes;
+    final text = attachment.previewText;
+    if (bytes == null && text == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This attachment is not available for local save yet.')));
+      return;
+    }
+    final ext = attachment.extension.isNotEmpty ? '.${attachment.extension}' : null;
+    final savePath = await FilePicker.platform.saveFile(
+      dialogTitle: 'Save attachment',
+      fileName: attachment.name,
+      type: ext != null ? FileType.custom : FileType.any,
+      allowedExtensions: ext != null ? [attachment.extension] : null,
+    );
+    if (savePath == null) return;
+    final target = File(savePath);
+    if (bytes != null) {
+      await target.writeAsBytes(bytes, flush: true);
+    } else {
+      await target.writeAsString(text!, flush: true);
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved to ${p.basename(target.path)}')));
+    }
   }
 
   IconData _iconFor(AttachmentType type) {

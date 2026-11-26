@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kmail_desktop/design_system/tokens/app_radii.dart';
 import 'package:kmail_desktop/design_system/tokens/app_spacing.dart';
 import 'package:kmail_desktop/features/attachments/preview/attachment_preview_service.dart';
 import 'package:kmail_desktop/shared/models/mail_models.dart';
@@ -26,7 +27,7 @@ class AttachmentPreviewDialog extends StatelessWidget {
                       children: [
                         Text(attachment.name,
                             style: Theme.of(context).textTheme.titleLarge),
-                        Text('Preview is read-only in Phase 1 mock foundation',
+                        Text('Read-only preview',
                             style: Theme.of(context).textTheme.bodySmall),
                       ],
                     ),
@@ -40,9 +41,19 @@ class AttachmentPreviewDialog extends StatelessWidget {
             ),
             const Divider(height: 1),
             Expanded(
-                child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: AttachmentPreviewService.preview(attachment))),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    child: AttachmentPreviewService.preview(attachment),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
