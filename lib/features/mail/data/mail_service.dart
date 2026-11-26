@@ -85,7 +85,7 @@ class MailService {
       final boxes = await client.listMailboxes();
       final dest = _resolveMailbox(boxes, toFolder);
       final destPath = dest?.path ?? switch(toFolder){MailFolder.trash=>'Trash',MailFolder.archive=>'Archive',MailFolder.spam=>'Junk',MailFolder.inbox=>'INBOX',MailFolder.sent=>'Sent',MailFolder.drafts=>'Drafts',MailFolder.custom=>'INBOX'};
-      await client.uidMove(MessageSequence.fromId(uid), destPath);
+      await client.uidMove(MessageSequence.fromId(uid), targetMailboxPath: destPath);
       await client.logout();
     } finally { await client.disconnect(); }
   }
