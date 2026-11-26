@@ -63,14 +63,76 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Show enough_mail version and API signatures
+        shell: pwsh
+        run: |
+          $cache = if ($env:PUB_CACHE) { $env:PUB_CACHE } else { Join-Path $env:LOCALAPPDATA "Pub\Cache" }
+          Write-Host "PUB_CACHE: $cache"
+          flutter pub deps --style=compact | Select-String "enough_mail"
+          $pkg = Get-ChildItem (Join-Path $cache "hosted\pub.dev") -Directory -Filter "enough_mail-*" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($pkg) {
+            Write-Host "Package dir: $($pkg.FullName)"
+            Get-ChildItem (Join-Path $pkg.FullName "lib") -Recurse -Filter *.dart |
+              Select-String -Pattern "connectToServer\(|Future<.*> sendMessage\(|Future<.*> authenticate\(|Future<.*> login\(|Future<.*> startTls\(" |
+              Select-Object -First 40 |
+              ForEach-Object { Write-Host ("{0}:{1}: {2}" -f $_.Filename, $_.LineNumber, $_.Line.Trim()) }
+          } else {
+            Write-Warning "enough_mail package directory not found in pub cache"
+          }
+
       - name: Format Dart code
         run: dart format .
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
+      - name: Show formatted mail_service.dart (lines 90-150)
+        shell: pwsh
+        run: |
+          $i = 90
+          Get-Content lib/features/mail/data/mail_service.dart | Select-Object -Skip 89 -First 61 | ForEach-Object { "{0}: {1}" -f $i++, $_ }
+
       - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        shell: pwsh
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | Tee-Object -FilePath analyze.log
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            Write-Host ""
+            Write-Host "=============== ERROR CONTEXT ==============="
+            $pattern = '^\s*error - .* - (?<file>[^:]+):(?<line>\d+):(?<col>\d+) - '
+            foreach ($l in (Get-Content analyze.log)) {
+              $m = [regex]::Match($l, $pattern)
+              if ($m.Success) {
+                $file = $m.Groups['file'].Value -replace '\\', '/'
+                $line = [int]$m.Groups['line'].Value
+                $col = $m.Groups['col'].Value
+                Write-Host ""
+                Write-Host ">>> ${file}:${line}:${col}"
+                Write-Host $l.Trim()
+                if (Test-Path $file) {
+                  $start = [Math]::Max(1, $line - 6)
+                  $n = $start
+                  Get-Content $file | Select-Object -Skip ($start - 1) -First 13 | ForEach-Object {
+                    $mark = if ($n -eq $line) { ">>" } else { "  " }
+                    "{0} {1}: {2}" -f $mark, $n, $_
+                    $n++
+                  }
+                }
+              }
+            }
+            Write-Host "============================================="
+          }
+          exit $code
+
+      - name: Upload analyze log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analyze-log
+          path: analyze.log
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Run tests
         run: flutter test
@@ -318,5 +380,3 @@ jobs:
             ${{ steps.package.outputs.out_dir }}/RELEASE_STATUS.txt
           retention-days: 14
           if-no-files-found: error
-
-
