@@ -113,7 +113,8 @@ class MailService {
   }
 
   Future<void> _connectImap(ImapClient client, MailAccountConfig config, String password) async {
-    await client.connectToServer(config.imapHost, config.imapPort, isSecure: config.imapSecurity == MailSecurity.sslTls);
+    final isSecure = config.imapSecurity == MailSecurity.sslTls;
+    await (client as dynamic).connectToServer(config.imapHost, config.imapPort, isSecure: isSecure);
     if (config.imapSecurity == MailSecurity.startTls) {
       await client.startTls();
     }
@@ -121,7 +122,8 @@ class MailService {
   }
 
   Future<void> _connectSmtp(SmtpClient client, MailAccountConfig config, String password) async {
-    await client.connectToServer(config.smtpHost, config.smtpPort, isSecure: config.smtpSecurity == MailSecurity.sslTls);
+    final isSecure = config.smtpSecurity == MailSecurity.sslTls;
+    await (client as dynamic).connectToServer(config.smtpHost, config.smtpPort, isSecure: isSecure);
     await client.ehlo();
     if (config.smtpSecurity == MailSecurity.startTls) {
       await client.startTls();

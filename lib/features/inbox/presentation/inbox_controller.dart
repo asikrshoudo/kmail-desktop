@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:enough_mail/enough_mail.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kmail_desktop/app/bootstrap.dart';
 import 'package:kmail_desktop/features/accounts/data/account_connection_state.dart';
@@ -148,7 +146,10 @@ class InboxController extends Notifier<InboxState> {
     String? defaultId = preferred;
     if (!makeDefault) {
       for (final a in accounts) {
-        if (a.isDefault) { defaultId = a.id; break; }
+        if (a.isDefault) {
+        defaultId = a.id;
+        break;
+      }
       }
       defaultId ??= preferred ?? accounts.first.id;
     }
@@ -228,7 +229,6 @@ class InboxController extends Notifier<InboxState> {
   List<EmailMessage> _mergeMessages(List<EmailMessage> existing, List<EmailMessage> fetched, String accountId) {
     final others = existing.where((m) => m.accountId != accountId).toList();
     final localDrafts = existing.where((m) => m.accountId == accountId && m.folder == MailFolder.drafts && m.id.startsWith('local-')).toList();
-    final existingById = {for (final m in existing.where((m) => m.accountId == accountId)) m.id: m};
     final byId = <String, EmailMessage>{};
     for (final m in fetched) {
       byId[m.id] = m;

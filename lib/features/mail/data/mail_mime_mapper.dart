@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:enough_mail/enough_mail.dart';
 import 'package:kmail_desktop/shared/models/mail_models.dart';
@@ -17,8 +18,8 @@ class MailMimeMapper {
     final plain = mime.decodeTextPlainPart() ?? '';
     final html = mime.decodeTextHtmlPart() ?? '';
     final date = mime.decodeDate() ?? DateTime.now();
-    final flags = mime.flags;
-    final isUnread = !(flags.contains(MessageFlags.seen));
+    final List<MessageFlags> flags = (mime.flags ?? const <MessageFlags>[]).toList();
+    final isUnread = !flags.contains(MessageFlags.seen);
     final isStarred = flags.contains(MessageFlags.flagged);
     final bodyPlain = plain.trim().isNotEmpty ? plain : _stripHtml(html);
     final bodyHtml = html.trim().isNotEmpty
@@ -30,36 +31,50 @@ class MailMimeMapper {
     final parts = mime.allPartsFlat;
     for (var i = 0; i < parts.length; i++) {
       final part = parts[i];
-      final name = part.decodeFileName();
-      final isAttachment = part.isAttachment() ||
-          (part.disposition?.disposition == ContentDisposition.attachment) ||
-          (name != null && name.isNotEmpty && part.mediaType.text != 'text/plain' && part.mediaType.text != 'text/html');
+      final dyn = part as dynamic;
+      final String? name = dyn.decodeFileName() as String?;
+      final String media = (dyn.mediaType?.text as String?)?.toLowerCase() ?? '';
+      final ContentDisposition? disp =
+          (dyn.contentDisposition?.disposition as ContentDisposition?);
+      final bool isAttachment = disp == ContentDisposition.attachment ||
+          (name != null &&
+              name.isNotEmpty &&
+              media != 'text/plain' &&
+              media != 'text/html');
       if (!isAttachment) continue;
       final fname = name ?? 'attachment-$i';
       final type = _typeForName(fname);
       List<int>? bytes;
       String? previewText;
       try {
-        if (type == AttachmentType.txt || type == AttachmentType.csv || type == AttachmentType.html) {
-          previewText = part.decodeContentText();
+        if (type == AttachmentType.txt ||
+            type == AttachmentType.csv ||
+            type == AttachmentType.html) {
+          previewText = dyn.decodeContentText() as String?;
         }
-        if (type == AttachmentType.png || type == AttachmentType.jpg || type == AttachmentType.gif || type == AttachmentType.webp || type == AttachmentType.pdf) {
-          bytes = part.decodeContentBinary();
+        if (type == AttachmentType.png ||
+            type == AttachmentType.jpg ||
+            type == AttachmentType.gif ||
+            type == AttachmentType.webp ||
+            type == AttachmentType.pdf) {
+          final decoded = dyn.decodeContentBinary();
+          if (decoded is List<int>) bytes = decoded;
         }
       } catch (_) {}
       attachments.add(Attachment(
         id: '${mime.guid ?? mime.sequenceId ?? i}-$i-${fname.hashCode}',
         name: fname,
         type: type,
-        sizeBytes: part.size ?? bytes?.length ?? 0,
+        sizeBytes: bytes?.length ?? 0,
         previewText: previewText,
         bytes: bytes,
       ));
     }
 
+    final String? mimeId = (mime as dynamic).messageId as String?;
     final id = mime.guid ??
-        mime.messageId ??
-        '${accountId}-${folder.name}-${date.microsecondsSinceEpoch}-${subject.hashCode}';
+        mimeId ??
+        '$accountId-${folder.name}-${date.microsecondsSinceEpoch}-${subject.hashCode}';
 
     return EmailMessage(
       id: id,
@@ -106,15 +121,23 @@ class MailMimeMapper {
         if (a.localPath != null && a.localPath!.isNotEmpty) {
           await builder.addFile(File(a.localPath!), MediaType.guessFromFileName(a.name));
         } else if (a.bytes != null) {
-          builder.addBinary(a.bytes!, MediaType.guessFromFileName(a.name), filename: a.name);
+          final data = a.bytes!;
+          builder.addBinary(
+            data is Uint8List ? data : Uint8List.fromList(data),
+            MediaType.guessFromFileName(a.name),
+            filename: a.name,
+          );
         }
       } catch (_) {}
     }
     return builder.buildMimeMessage();
   }
 
-  static EmailAddress _addr(MailAddress a) =>
-      EmailAddress(name: a.personalName ?? a.mailboxName ?? '', email: a.email);
+  static EmailAddress _addr(MailAddress a) {
+    final name = a.personalName;
+    final fallback = a.email.split('@').first;
+    return EmailAddress(name: (name != null && name.isNotEmpty) ? name : fallback, email: a.email);
+  }
 
   static AttachmentType _typeForName(String name) {
     final ext = name.contains('.') ? name.split('.').last.toLowerCase() : '';

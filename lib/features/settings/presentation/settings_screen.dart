@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kmail_desktop/app/state/settings_controller.dart';
 import 'package:kmail_desktop/design_system/motion/app_motion.dart';
 import 'package:kmail_desktop/design_system/tokens/app_colors.dart';
-import 'package:kmail_desktop/design_system/tokens/app_radii.dart';
 import 'package:kmail_desktop/design_system/tokens/app_spacing.dart';
 import 'package:kmail_desktop/features/accounts/presentation/account_setup_dialog.dart';
 import 'package:kmail_desktop/features/inbox/presentation/inbox_controller.dart';
