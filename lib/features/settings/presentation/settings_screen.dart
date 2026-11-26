@@ -165,28 +165,40 @@ class SettingsScreen extends ConsumerWidget {
                         'Connect IMAP/SMTP email accounts. Passwords are stored in OS secure storage; account config and cached mail are stored locally.',
                     child: Consumer(builder: (context, ref, _) {
                       final inbox = ref.watch(inboxControllerProvider);
-                      final controller = ref.read(inboxControllerProvider.notifier);
+                      final controller =
+                          ref.read(inboxControllerProvider.notifier);
                       return Column(
                         children: [
                           if (inbox.accounts.isEmpty)
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: Icon(Icons.mail_outline_rounded, color: colors.textSecondary),
+                              leading: Icon(Icons.mail_outline_rounded,
+                                  color: colors.textSecondary),
                               title: const Text('No accounts connected'),
-                              subtitle: const Text('Add an account to sync and send mail.'),
+                              subtitle: const Text(
+                                  'Add an account to sync and send mail.'),
                             ),
                           for (final a in inbox.accounts)
                             ListTile(
                               contentPadding: EdgeInsets.zero,
                               leading: CircleAvatar(
                                 backgroundColor: Color(a.colorValue),
-                                child: Text(a.displayName.isNotEmpty ? a.displayName[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white)),
+                                child: Text(
+                                    a.displayName.isNotEmpty
+                                        ? a.displayName[0].toUpperCase()
+                                        : '?',
+                                    style:
+                                        const TextStyle(color: Colors.white)),
                               ),
                               title: Text(a.displayName),
-                              subtitle: Text('${a.email}${a.isDefault ? ' • Default' : ''}'),
+                              subtitle: Text(
+                                  '${a.email}${a.isDefault ? ' • Default' : ''}'),
                               trailing: Wrap(spacing: 4, children: [
                                 if (!a.isDefault)
-                                  TextButton(onPressed: () => controller.setDefaultAccount(a.id), child: const Text('Make default')),
+                                  TextButton(
+                                      onPressed: () =>
+                                          controller.setDefaultAccount(a.id),
+                                      child: const Text('Make default')),
                                 IconButton(
                                   tooltip: 'Remove account',
                                   onPressed: () async {
@@ -194,16 +206,25 @@ class SettingsScreen extends ConsumerWidget {
                                       context: context,
                                       builder: (c) => AlertDialog(
                                         title: const Text('Remove account?'),
-                                        content: Text('Remove ${a.email} from this device? Cached mail for this account will be removed locally.'),
+                                        content: Text(
+                                            'Remove ${a.email} from this device? Cached mail for this account will be removed locally.'),
                                         actions: [
-                                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-                                          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Remove')),
+                                          TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(c, false),
+                                              child: const Text('Cancel')),
+                                          FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(c, true),
+                                              child: const Text('Remove')),
                                         ],
                                       ),
                                     );
-                                    if (confirm == true) await controller.removeAccount(a.id);
+                                    if (confirm == true)
+                                      await controller.removeAccount(a.id);
                                   },
-                                  icon: const Icon(Icons.delete_outline_rounded),
+                                  icon:
+                                      const Icon(Icons.delete_outline_rounded),
                                 ),
                               ]),
                             ),
@@ -211,7 +232,10 @@ class SettingsScreen extends ConsumerWidget {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: OutlinedButton.icon(
-                              onPressed: () => showDialog<void>(context: context, barrierDismissible: false, builder: (_) => const AccountSetupDialog()),
+                              onPressed: () => showDialog<void>(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) => const AccountSetupDialog()),
                               icon: const Icon(Icons.add),
                               label: const Text('Add account'),
                             ),
@@ -225,15 +249,40 @@ class SettingsScreen extends ConsumerWidget {
                     child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.shield_outlined), title: Text('Remote image policy'), subtitle: Text('Remote images are blocked by default. No tracking pixels are loaded until you allow them.')),
-                        ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.lock_outline_rounded), title: Text('Credentials'), subtitle: Text('Account passwords are stored using OS secure storage and are not written to plaintext logs or config.')),
-                        ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.open_in_new_rounded), title: Text('External link handling'), subtitle: Text('External links require confirmation before opening in your browser.')),
-                        ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.storage_outlined), title: Text('Local data'), subtitle: Text('Account config, cached messages, and drafts are stored locally on this device. Use account removal to clear account cache.')),
+                        ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(Icons.shield_outlined),
+                            title: Text('Remote image policy'),
+                            subtitle: Text(
+                                'Remote images are blocked by default. No tracking pixels are loaded until you allow them.')),
+                        ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(Icons.lock_outline_rounded),
+                            title: Text('Credentials'),
+                            subtitle: Text(
+                                'Account passwords are stored using OS secure storage and are not written to plaintext logs or config.')),
+                        ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(Icons.open_in_new_rounded),
+                            title: Text('External link handling'),
+                            subtitle: Text(
+                                'External links require confirmation before opening in your browser.')),
+                        ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Icon(Icons.storage_outlined),
+                            title: Text('Local data'),
+                            subtitle: Text(
+                                'Account config, cached messages, and drafts are stored locally on this device. Use account removal to clear account cache.')),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text('Kmail Desktop • Local-first email client by TheKami', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.textSecondary)),                ],
+                  Text('Kmail Desktop • Local-first email client by TheKami',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: colors.textSecondary)),
+                ],
               ),
             ),
           ],
@@ -275,5 +324,3 @@ class _Section extends StatelessWidget {
     );
   }
 }
-
-

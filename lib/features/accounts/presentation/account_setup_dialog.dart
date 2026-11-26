@@ -54,22 +54,32 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
 
   @override
   void dispose() {
-    _name.dispose(); _email.dispose(); _username.dispose(); _password.dispose();
-    _imapHost.dispose(); _imapPort.dispose(); _smtpHost.dispose(); _smtpPort.dispose();
+    _name.dispose();
+    _email.dispose();
+    _username.dispose();
+    _password.dispose();
+    _imapHost.dispose();
+    _imapPort.dispose();
+    _smtpHost.dispose();
+    _smtpPort.dispose();
     super.dispose();
   }
 
   void _autoFill() {
     final email = _email.text.trim();
     if (_username.text.trim().isEmpty) _username.text = email;
-    final domain = email.contains('@') ? email.split('@').last.toLowerCase() : '';
+    final domain =
+        email.contains('@') ? email.split('@').last.toLowerCase() : '';
     final preset = _presets[domain];
     if (preset == null) return;
     if (_imapHost.text.trim().isEmpty) _imapHost.text = preset.imapHost;
     if (_smtpHost.text.trim().isEmpty) _smtpHost.text = preset.smtpHost;
     _imapPort.text = preset.imapPort.toString();
     _smtpPort.text = preset.smtpPort.toString();
-    setState(() { _imapSecurity = preset.imapSecurity; _smtpSecurity = preset.smtpSecurity; });
+    setState(() {
+      _imapSecurity = preset.imapSecurity;
+      _smtpSecurity = preset.smtpSecurity;
+    });
   }
 
   MailAccountConfig _buildConfig() {
@@ -84,7 +94,9 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
       smtpHost: _smtpHost.text.trim(),
       smtpPort: int.tryParse(_smtpPort.text.trim()) ?? 587,
       smtpSecurity: _smtpSecurity,
-      username: _username.text.trim().isEmpty ? _email.text.trim() : _username.text.trim(),
+      username: _username.text.trim().isEmpty
+          ? _email.text.trim()
+          : _username.text.trim(),
       isDefault: _makeDefault || (existing?.isDefault ?? false),
       colorValue: existing?.colorValue ?? _colorFor(_email.text.trim()),
     );
@@ -98,28 +110,54 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
   Future<void> _test() async {
     if (!_formKey.currentState!.validate()) return;
     if (_password.text.isEmpty && widget.existing == null) {
-      setState(() { _status = 'Enter a password or app password to test the connection.'; _statusOk = false; });
+      setState(() {
+        _status = 'Enter a password or app password to test the connection.';
+        _statusOk = false;
+      });
       return;
     }
-    setState(() { _testing = true; _status = null; });
+    setState(() {
+      _testing = true;
+      _status = null;
+    });
     final cfg = _buildConfig();
-    final pwd = _password.text.isNotEmpty ? _password.text : (await ref.read(inboxControllerProvider.notifier).getPassword(cfg.id) ?? '');
+    final pwd = _password.text.isNotEmpty
+        ? _password.text
+        : (await ref
+                .read(inboxControllerProvider.notifier)
+                .getPassword(cfg.id) ??
+            '');
     if (pwd.isEmpty) {
-      setState(() { _testing = false; _status = 'Password required for connection test.'; _statusOk = false; });
+      setState(() {
+        _testing = false;
+        _status = 'Password required for connection test.';
+        _statusOk = false;
+      });
       return;
     }
-    final (ok, msg) = await ref.read(inboxControllerProvider.notifier).testAccount(cfg, pwd);
+    final (ok, msg) =
+        await ref.read(inboxControllerProvider.notifier).testAccount(cfg, pwd);
     if (!mounted) return;
-    setState(() { _testing = false; _status = msg; _statusOk = ok; });
+    setState(() {
+      _testing = false;
+      _status = msg;
+      _statusOk = ok;
+    });
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_password.text.isEmpty && widget.existing == null) {
-      setState(() { _status = 'Password or app password is required to add an account.'; _statusOk = false; });
+      setState(() {
+        _status = 'Password or app password is required to add an account.';
+        _statusOk = false;
+      });
       return;
     }
-    setState(() { _saving = true; _status = null; });
+    setState(() {
+      _saving = true;
+      _status = null;
+    });
     final cfg = _buildConfig();
     final controller = ref.read(inboxControllerProvider.notifier);
     var pwd = _password.text;
@@ -127,20 +165,31 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
       pwd = await controller.getPassword(widget.existing!.id) ?? '';
     }
     if (pwd.isEmpty) {
-      setState(() { _saving = false; _status = 'Password is required.'; _statusOk = false; });
+      setState(() {
+        _saving = false;
+        _status = 'Password is required.';
+        _statusOk = false;
+      });
       return;
     }
     final (ok, msg) = await controller.testAccount(cfg, pwd);
     if (!ok) {
       if (!mounted) return;
-      setState(() { _saving = false; _status = msg; _statusOk = false; });
+      setState(() {
+        _saving = false;
+        _status = msg;
+        _statusOk = false;
+      });
       return;
     }
     await controller.addAccount(cfg, pwd);
     if (_makeDefault) await controller.setDefaultAccount(cfg.id);
     if (!mounted) return;
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.existing == null ? 'Account connected.' : 'Account updated.')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(widget.existing == null
+            ? 'Account connected.'
+            : 'Account updated.')));
   }
 
   @override
@@ -156,41 +205,68 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
           child: Column(
             children: [
               Row(children: [
-                Expanded(child: Text(isEdit ? 'Edit account' : 'Add email account', style: Theme.of(context).textTheme.headlineSmall)),
-                IconButton(onPressed: _saving ? null : () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                Expanded(
+                    child: Text(isEdit ? 'Edit account' : 'Add email account',
+                        style: Theme.of(context).textTheme.headlineSmall)),
+                IconButton(
+                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded)),
               ]),
               const SizedBox(height: 8),
-              Expanded(child: Form(
+              Expanded(
+                  child: Form(
                 key: _formKey,
                 child: ListView(children: [
-                  Text('Connect an existing email account using IMAP and SMTP. Kmail does not provide email hosting.', style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                      'Connect an existing email account using IMAP and SMTP. Kmail does not provide email hosting.',
+                      style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: AppSpacing.md),
                   _section(context, 'Account', [
                     _field(_name, 'Display name', validator: _req),
-                    _field(_email, 'Email address', validator: _emailValidator, keyboard: TextInputType.emailAddress),
+                    _field(_email, 'Email address',
+                        validator: _emailValidator,
+                        keyboard: TextInputType.emailAddress),
                     _field(_username, 'Username', validator: _req),
-                    _field(_password, isEdit ? 'Password / app password (leave blank to keep existing)' : 'Password / app password', obscure: true, validator: isEdit ? null : _req),
+                    _field(
+                        _password,
+                        isEdit
+                            ? 'Password / app password (leave blank to keep existing)'
+                            : 'Password / app password',
+                        obscure: true,
+                        validator: isEdit ? null : _req),
                   ]),
                   _section(context, 'Incoming IMAP', [
                     _field(_imapHost, 'IMAP host', validator: _req),
                     Row(children: [
-                      Expanded(child: _field(_imapPort, 'Port', validator: _portValidator, keyboard: TextInputType.number)),
+                      Expanded(
+                          child: _field(_imapPort, 'Port',
+                              validator: _portValidator,
+                              keyboard: TextInputType.number)),
                       const SizedBox(width: 12),
-                      Expanded(child: _securityDropdown('Security', _imapSecurity, (v) => setState(() => _imapSecurity = v))),
+                      Expanded(
+                          child: _securityDropdown('Security', _imapSecurity,
+                              (v) => setState(() => _imapSecurity = v))),
                     ]),
                   ]),
                   _section(context, 'Outgoing SMTP', [
                     _field(_smtpHost, 'SMTP host', validator: _req),
                     Row(children: [
-                      Expanded(child: _field(_smtpPort, 'Port', validator: _portValidator, keyboard: TextInputType.number)),
+                      Expanded(
+                          child: _field(_smtpPort, 'Port',
+                              validator: _portValidator,
+                              keyboard: TextInputType.number)),
                       const SizedBox(width: 12),
-                      Expanded(child: _securityDropdown('Security', _smtpSecurity, (v) => setState(() => _smtpSecurity = v))),
+                      Expanded(
+                          child: _securityDropdown('Security', _smtpSecurity,
+                              (v) => setState(() => _smtpSecurity = v))),
                     ]),
                   ]),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _makeDefault,
-                    onChanged: _saving ? null : (v) => setState(() => _makeDefault = v ?? false),
+                    onChanged: _saving
+                        ? null
+                        : (v) => setState(() => _makeDefault = v ?? false),
                     title: const Text('Set as default sending account'),
                     controlAffinity: ListTileControlAffinity.leading,
                   ),
@@ -198,21 +274,45 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: (_statusOk ? colors.success : colors.error).withValues(alpha: 0.08),
+                        color: (_statusOk ? colors.success : colors.error)
+                            .withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(AppRadii.md),
-                        border: Border.all(color: (_statusOk ? colors.success : colors.error).withValues(alpha: 0.25)),
+                        border: Border.all(
+                            color: (_statusOk ? colors.success : colors.error)
+                                .withValues(alpha: 0.25)),
                       ),
-                      child: Text(_status!, style: TextStyle(color: _statusOk ? colors.success : colors.error)),
+                      child: Text(_status!,
+                          style: TextStyle(
+                              color:
+                                  _statusOk ? colors.success : colors.error)),
                     ),
                 ]),
               )),
               const SizedBox(height: AppSpacing.md),
               Row(children: [
-                OutlinedButton.icon(onPressed: _testing || _saving ? null : _test, icon: _testing ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.wifi_tethering_rounded), label: const Text('Test connection')),
+                OutlinedButton.icon(
+                    onPressed: _testing || _saving ? null : _test,
+                    icon: _testing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.wifi_tethering_rounded),
+                    label: const Text('Test connection')),
                 const Spacer(),
-                TextButton(onPressed: _saving ? null : () => Navigator.pop(context), child: const Text('Cancel')),
+                TextButton(
+                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    child: const Text('Cancel')),
                 const SizedBox(width: 8),
-                FilledButton.icon(onPressed: _saving ? null : _save, icon: _saving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.check_rounded), label: Text(isEdit ? 'Save account' : 'Connect account')),
+                FilledButton.icon(
+                    onPressed: _saving ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.check_rounded),
+                    label: Text(isEdit ? 'Save account' : 'Connect account')),
               ]),
             ],
           ),
@@ -226,31 +326,59 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(color: colors.surface, border: Border.all(color: colors.border), borderRadius: BorderRadius.circular(AppRadii.lg)),
+      decoration: BoxDecoration(
+          color: colors.surface,
+          border: Border.all(color: colors.border),
+          borderRadius: BorderRadius.circular(AppRadii.lg)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(title, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: AppSpacing.sm),
-        ...children.expand((w) => [w, const SizedBox(height: 10)]).toList()..removeLast(),
+        ...children.expand((w) => [w, const SizedBox(height: 10)]).toList()
+          ..removeLast(),
       ]),
     );
   }
 
-  Widget _field(TextEditingController c, String label, {String? Function(String?)? validator, bool obscure = false, TextInputType? keyboard}) {
-    return TextFormField(controller: c, obscureText: obscure, keyboardType: keyboard, decoration: InputDecoration(labelText: label), validator: validator);
+  Widget _field(TextEditingController c, String label,
+      {String? Function(String?)? validator,
+      bool obscure = false,
+      TextInputType? keyboard}) {
+    return TextFormField(
+        controller: c,
+        obscureText: obscure,
+        keyboardType: keyboard,
+        decoration: InputDecoration(labelText: label),
+        validator: validator);
   }
 
-  Widget _securityDropdown(String label, MailSecurity value, ValueChanged<MailSecurity> onChanged) {
-    String text(MailSecurity s) => switch (s) { MailSecurity.sslTls => 'SSL/TLS', MailSecurity.startTls => 'STARTTLS', MailSecurity.none => 'None (not recommended)' };
+  Widget _securityDropdown(
+      String label, MailSecurity value, ValueChanged<MailSecurity> onChanged) {
+    String text(MailSecurity s) => switch (s) {
+          MailSecurity.sslTls => 'SSL/TLS',
+          MailSecurity.startTls => 'STARTTLS',
+          MailSecurity.none => 'None (not recommended)'
+        };
     return DropdownButtonFormField<MailSecurity>(
       value: value,
       decoration: InputDecoration(labelText: label),
-      items: [for (final s in MailSecurity.values) DropdownMenuItem(value: s, child: Text(text(s)))],
-      onChanged: (v) { if (v != null) onChanged(v); },
+      items: [
+        for (final s in MailSecurity.values)
+          DropdownMenuItem(value: s, child: Text(text(s)))
+      ],
+      onChanged: (v) {
+        if (v != null) onChanged(v);
+      },
     );
   }
 
-  String? _req(String? v) => (v == null || v.trim().isEmpty) ? 'Required' : null;
-  String? _portValidator(String? v) { final n = int.tryParse(v?.trim() ?? ''); if (n == null || n < 1 || n > 65535) return 'Invalid port'; return null; }
+  String? _req(String? v) =>
+      (v == null || v.trim().isEmpty) ? 'Required' : null;
+  String? _portValidator(String? v) {
+    final n = int.tryParse(v?.trim() ?? '');
+    if (n == null || n < 1 || n > 65535) return 'Invalid port';
+    return null;
+  }
+
   String? _emailValidator(String? v) {
     final value = v?.trim() ?? '';
     if (value.isEmpty) return 'Required';
@@ -260,17 +388,29 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
 }
 
 class _Preset {
-  const _Preset(this.imapHost, this.imapPort, this.imapSecurity, this.smtpHost, this.smtpPort, this.smtpSecurity);
-  final String imapHost; final int imapPort; final MailSecurity imapSecurity;
-  final String smtpHost; final int smtpPort; final MailSecurity smtpSecurity;
+  const _Preset(this.imapHost, this.imapPort, this.imapSecurity, this.smtpHost,
+      this.smtpPort, this.smtpSecurity);
+  final String imapHost;
+  final int imapPort;
+  final MailSecurity imapSecurity;
+  final String smtpHost;
+  final int smtpPort;
+  final MailSecurity smtpSecurity;
 }
 
 const _presets = <String, _Preset>{
-  'gmail.com': _Preset('imap.gmail.com', 993, MailSecurity.sslTls, 'smtp.gmail.com', 587, MailSecurity.startTls),
-  'googlemail.com': _Preset('imap.gmail.com', 993, MailSecurity.sslTls, 'smtp.gmail.com', 587, MailSecurity.startTls),
-  'outlook.com': _Preset('outlook.office365.com', 993, MailSecurity.sslTls, 'smtp.office365.com', 587, MailSecurity.startTls),
-  'hotmail.com': _Preset('outlook.office365.com', 993, MailSecurity.sslTls, 'smtp.office365.com', 587, MailSecurity.startTls),
-  'live.com': _Preset('outlook.office365.com', 993, MailSecurity.sslTls, 'smtp.office365.com', 587, MailSecurity.startTls),
-  'yahoo.com': _Preset('imap.mail.yahoo.com', 993, MailSecurity.sslTls, 'smtp.mail.yahoo.com', 587, MailSecurity.startTls),
-  'icloud.com': _Preset('imap.mail.me.com', 993, MailSecurity.sslTls, 'smtp.mail.me.com', 587, MailSecurity.startTls),
+  'gmail.com': _Preset('imap.gmail.com', 993, MailSecurity.sslTls,
+      'smtp.gmail.com', 587, MailSecurity.startTls),
+  'googlemail.com': _Preset('imap.gmail.com', 993, MailSecurity.sslTls,
+      'smtp.gmail.com', 587, MailSecurity.startTls),
+  'outlook.com': _Preset('outlook.office365.com', 993, MailSecurity.sslTls,
+      'smtp.office365.com', 587, MailSecurity.startTls),
+  'hotmail.com': _Preset('outlook.office365.com', 993, MailSecurity.sslTls,
+      'smtp.office365.com', 587, MailSecurity.startTls),
+  'live.com': _Preset('outlook.office365.com', 993, MailSecurity.sslTls,
+      'smtp.office365.com', 587, MailSecurity.startTls),
+  'yahoo.com': _Preset('imap.mail.yahoo.com', 993, MailSecurity.sslTls,
+      'smtp.mail.yahoo.com', 587, MailSecurity.startTls),
+  'icloud.com': _Preset('imap.mail.me.com', 993, MailSecurity.sslTls,
+      'smtp.mail.me.com', 587, MailSecurity.startTls),
 };

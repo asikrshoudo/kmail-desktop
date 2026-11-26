@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('AccountStore saves config without password and stores password securely', () async {
+  test(
+      'AccountStore saves config without password and stores password securely',
+      () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final creds = MemoryCredentialStorage();

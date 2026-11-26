@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:kmail_desktop/features/accounts/data/account_connection_state.dart';
 import 'package:kmail_desktop/features/accounts/data/mail_account_config.dart';
@@ -81,12 +80,15 @@ class InboxState {
       messages: messages ?? this.messages,
       selectedAccountId: selectedAccountId ?? this.selectedAccountId,
       selectedView: selectedView ?? this.selectedView,
-      selectedMessageId: clearSelectedMessage ? null : (selectedMessageId ?? this.selectedMessageId),
+      selectedMessageId: clearSelectedMessage
+          ? null
+          : (selectedMessageId ?? this.selectedMessageId),
       selectedIds: selectedIds ?? this.selectedIds,
       searchQuery: searchQuery ?? this.searchQuery,
       sortNewestFirst: sortNewestFirst ?? this.sortNewestFirst,
       filterUnreadOnly: filterUnreadOnly ?? this.filterUnreadOnly,
-      filterAttachmentsOnly: filterAttachmentsOnly ?? this.filterAttachmentsOnly,
+      filterAttachmentsOnly:
+          filterAttachmentsOnly ?? this.filterAttachmentsOnly,
       syncStatus: syncStatus ?? this.syncStatus,
       error: clearError ? null : (error ?? this.error),
       connectionStates: connectionStates ?? this.connectionStates,
@@ -117,14 +119,21 @@ class InboxState {
       if (filterAttachmentsOnly && !m.hasAttachments) return false;
       if (q.isEmpty) return true;
       final haystack = [
-        m.sender.name, m.sender.email, m.subject, m.preview, m.bodyPlainText,
-        ...m.to.map((e) => e.email), ...m.to.map((e) => e.name),
-        ...m.cc.map((e) => e.email), ...m.bcc.map((e) => e.email),
+        m.sender.name,
+        m.sender.email,
+        m.subject,
+        m.preview,
+        m.bodyPlainText,
+        ...m.to.map((e) => e.email),
+        ...m.to.map((e) => e.name),
+        ...m.cc.map((e) => e.email),
+        ...m.bcc.map((e) => e.email),
         ...m.labels,
       ].join(' ').toLowerCase();
       return haystack.contains(q);
     }).toList();
-    scoped.sort((a, b) => sortNewestFirst ? b.date.compareTo(a.date) : a.date.compareTo(b.date));
+    scoped.sort((a, b) =>
+        sortNewestFirst ? b.date.compareTo(a.date) : a.date.compareTo(b.date));
     return scoped;
   }
 
@@ -142,24 +151,64 @@ class InboxState {
   }
 
   static bool _matchesView(EmailMessage m, MailboxView view) => switch (view) {
-    MailboxView.allInboxes => m.folder == MailFolder.inbox,
-    MailboxView.starred => m.isStarred && m.folder != MailFolder.trash,
-    MailboxView.unread => m.isUnread && m.folder != MailFolder.trash,
-    MailboxView.inbox => m.folder == MailFolder.inbox,
-    MailboxView.drafts => m.folder == MailFolder.drafts,
-    MailboxView.sent => m.folder == MailFolder.sent,
-    MailboxView.spam => m.folder == MailFolder.spam,
-    MailboxView.trash => m.folder == MailFolder.trash,
-  };
+        MailboxView.allInboxes => m.folder == MailFolder.inbox,
+        MailboxView.starred => m.isStarred && m.folder != MailFolder.trash,
+        MailboxView.unread => m.isUnread && m.folder != MailFolder.trash,
+        MailboxView.inbox => m.folder == MailFolder.inbox,
+        MailboxView.drafts => m.folder == MailFolder.drafts,
+        MailboxView.sent => m.folder == MailFolder.sent,
+        MailboxView.spam => m.folder == MailFolder.spam,
+        MailboxView.trash => m.folder == MailFolder.trash,
+      };
 
   List<FolderItem> get folders => [
-    FolderItem(id: 'all-inboxes', label: 'All Inboxes', icon: Icons.all_inbox_rounded, view: MailboxView.allInboxes, count: countView(MailboxView.allInboxes)),
-    FolderItem(id: 'starred', label: 'Starred', icon: Icons.star_outline_rounded, view: MailboxView.starred, count: countView(MailboxView.starred)),
-    FolderItem(id: 'unread', label: 'Unread', icon: Icons.mark_email_unread_outlined, view: MailboxView.unread, count: countView(MailboxView.unread)),
-    FolderItem(id: 'inbox', label: 'Inbox', icon: Icons.inbox_rounded, view: MailboxView.inbox, count: countView(MailboxView.inbox)),
-    FolderItem(id: 'drafts', label: 'Drafts', icon: Icons.drafts_outlined, view: MailboxView.drafts, count: countView(MailboxView.drafts)),
-    FolderItem(id: 'sent', label: 'Sent', icon: Icons.send_outlined, view: MailboxView.sent, count: countView(MailboxView.sent)),
-    FolderItem(id: 'spam', label: 'Spam', icon: Icons.report_gmailerrorred_outlined, view: MailboxView.spam, count: countView(MailboxView.spam)),
-    FolderItem(id: 'trash', label: 'Trash', icon: Icons.delete_outline_rounded, view: MailboxView.trash, count: countView(MailboxView.trash)),
-  ];
+        FolderItem(
+            id: 'all-inboxes',
+            label: 'All Inboxes',
+            icon: Icons.all_inbox_rounded,
+            view: MailboxView.allInboxes,
+            count: countView(MailboxView.allInboxes)),
+        FolderItem(
+            id: 'starred',
+            label: 'Starred',
+            icon: Icons.star_outline_rounded,
+            view: MailboxView.starred,
+            count: countView(MailboxView.starred)),
+        FolderItem(
+            id: 'unread',
+            label: 'Unread',
+            icon: Icons.mark_email_unread_outlined,
+            view: MailboxView.unread,
+            count: countView(MailboxView.unread)),
+        FolderItem(
+            id: 'inbox',
+            label: 'Inbox',
+            icon: Icons.inbox_rounded,
+            view: MailboxView.inbox,
+            count: countView(MailboxView.inbox)),
+        FolderItem(
+            id: 'drafts',
+            label: 'Drafts',
+            icon: Icons.drafts_outlined,
+            view: MailboxView.drafts,
+            count: countView(MailboxView.drafts)),
+        FolderItem(
+            id: 'sent',
+            label: 'Sent',
+            icon: Icons.send_outlined,
+            view: MailboxView.sent,
+            count: countView(MailboxView.sent)),
+        FolderItem(
+            id: 'spam',
+            label: 'Spam',
+            icon: Icons.report_gmailerrorred_outlined,
+            view: MailboxView.spam,
+            count: countView(MailboxView.spam)),
+        FolderItem(
+            id: 'trash',
+            label: 'Trash',
+            icon: Icons.delete_outline_rounded,
+            view: MailboxView.trash,
+            count: countView(MailboxView.trash)),
+      ];
 }

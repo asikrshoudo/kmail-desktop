@@ -21,7 +21,20 @@ enum MailboxView {
   trash,
 }
 
-enum AttachmentType { pdf, png, jpg, gif, webp, txt, csv, docx, xlsx, zip, html, unknown }
+enum AttachmentType {
+  pdf,
+  png,
+  jpg,
+  gif,
+  webp,
+  txt,
+  csv,
+  docx,
+  xlsx,
+  zip,
+  html,
+  unknown
+}
 
 @immutable
 class EmailAddress {
@@ -49,7 +62,8 @@ class Attachment {
   final String? previewText;
   final String? localPath;
   final List<int>? bytes;
-  String get extension => name.contains('.') ? name.split('.').last.toLowerCase() : '';
+  String get extension =>
+      name.contains('.') ? name.split('.').last.toLowerCase() : '';
 }
 
 @immutable

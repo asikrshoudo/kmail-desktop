@@ -19,7 +19,8 @@ class MailMimeMapper {
     final html = mime.decodeTextHtmlPart() ?? '';
     final date = mime.decodeDate() ?? DateTime.now();
     final rawFlags = (mime.flags ?? const []).toList();
-    final flagStrings = rawFlags.map((f) => f.toString()).join(' ').toLowerCase();
+    final flagStrings =
+        rawFlags.map((f) => f.toString()).join(' ').toLowerCase();
     final isUnread = !flagStrings.contains('seen');
     final isStarred = flagStrings.contains('flagged');
     final bodyPlain = plain.trim().isNotEmpty ? plain : _stripHtml(html);
@@ -34,7 +35,8 @@ class MailMimeMapper {
       final part = parts[i];
       final dyn = part as dynamic;
       final String? name = dyn.decodeFileName() as String?;
-      final String media = (dyn.mediaType?.text as String?)?.toLowerCase() ?? '';
+      final String media =
+          (dyn.mediaType?.text as String?)?.toLowerCase() ?? '';
       final ContentDisposition? disp =
           (dyn.contentDisposition?.disposition as ContentDisposition?);
       final bool isAttachment = disp == ContentDisposition.attachment ||
@@ -121,7 +123,8 @@ class MailMimeMapper {
     for (final a in msg.attachments) {
       try {
         if (a.localPath != null && a.localPath!.isNotEmpty) {
-          await builder.addFile(File(a.localPath!), MediaType.guessFromFileName(a.name));
+          await builder.addFile(
+              File(a.localPath!), MediaType.guessFromFileName(a.name));
         } else if (a.bytes != null) {
           final data = a.bytes!;
           builder.addBinary(
@@ -138,7 +141,9 @@ class MailMimeMapper {
   static EmailAddress _addr(MailAddress a) {
     final name = a.personalName;
     final fallback = a.email.split('@').first;
-    return EmailAddress(name: (name != null && name.isNotEmpty) ? name : fallback, email: a.email);
+    return EmailAddress(
+        name: (name != null && name.isNotEmpty) ? name : fallback,
+        email: a.email);
   }
 
   static AttachmentType _typeForName(String name) {

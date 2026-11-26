@@ -42,13 +42,15 @@ class _FakeMailService extends MailService {
   }
 
   @override
-  Future<void> sendMessage(MailAccountConfig config, String password, message) async {}
+  Future<void> sendMessage(
+      MailAccountConfig config, String password, message) async {}
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<ProviderContainer> makeContainer({List<MailAccountConfig> accounts = const []}) async {
+  Future<ProviderContainer> makeContainer(
+      {List<MailAccountConfig> accounts = const []}) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final store = AccountStore(prefs, MemoryCredentialStorage());
@@ -95,7 +97,10 @@ void main() {
       controller.setSearch('receipt');
       final state = container.read(inboxControllerProvider);
       expect(state.visibleMessages, isNotEmpty);
-      expect(state.visibleMessages.every((m) => m.subject.toLowerCase().contains('receipt')), isTrue);
+      expect(
+          state.visibleMessages
+              .every((m) => m.subject.toLowerCase().contains('receipt')),
+          isTrue);
     });
 
     test('star, archive, delete update local state', () async {
@@ -114,13 +119,30 @@ void main() {
       );
       final container = await makeContainer(accounts: [account]);
       final controller = container.read(inboxControllerProvider.notifier);
-      final id = container.read(inboxControllerProvider).visibleMessages.first.id;
-      final before = container.read(inboxControllerProvider).messages.firstWhere((m) => m.id == id).isStarred;
+      final id =
+          container.read(inboxControllerProvider).visibleMessages.first.id;
+      final before = container
+          .read(inboxControllerProvider)
+          .messages
+          .firstWhere((m) => m.id == id)
+          .isStarred;
       controller.toggleStar(id);
-      expect(container.read(inboxControllerProvider).messages.firstWhere((m) => m.id == id).isStarred, !before);
+      expect(
+          container
+              .read(inboxControllerProvider)
+              .messages
+              .firstWhere((m) => m.id == id)
+              .isStarred,
+          !before);
       controller.toggleSelected(id);
       controller.archiveSelected();
-      expect(container.read(inboxControllerProvider).messages.firstWhere((m) => m.id == id).folder, MailFolder.archive);
+      expect(
+          container
+              .read(inboxControllerProvider)
+              .messages
+              .firstWhere((m) => m.id == id)
+              .folder,
+          MailFolder.archive);
     });
   });
 }

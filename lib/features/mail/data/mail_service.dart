@@ -45,10 +45,13 @@ class MailService {
       }
       final start = total > limit ? total - limit + 1 : 1;
       final sequence = MessageSequence.fromRange(start, total);
-      final fetch = await client.fetchMessages(sequence, '(FLAGS UID ENVELOPE RFC822.SIZE BODY.PEEK[])');
+      final fetch = await client.fetchMessages(
+          sequence, '(FLAGS UID ENVELOPE RFC822.SIZE BODY.PEEK[])');
       final mailboxPath = mailbox.path;
       final messages = fetch.messages.reversed
-          .map((m) => MailMimeMapper.fromMime(m, accountId: config.id, folder: folder).copyWith(remoteMailbox: mailboxPath))
+          .map((m) =>
+              MailMimeMapper.fromMime(m, accountId: config.id, folder: folder)
+                  .copyWith(remoteMailbox: mailboxPath))
           .toList();
       await client.logout();
       return messages;
@@ -57,7 +60,10 @@ class MailService {
     }
   }
 
-  Future<void> setSeen(MailAccountConfig config, String password, {required int uid, required String mailboxPath, required bool seen}) async {
+  Future<void> setSeen(MailAccountConfig config, String password,
+      {required int uid,
+      required String mailboxPath,
+      required bool seen}) async {
     final client = ImapClient(isLogEnabled: false);
     try {
       await _connectImap(client, config, password);
@@ -68,44 +74,72 @@ class MailService {
         action: seen ? StoreAction.add : StoreAction.remove,
       );
       await client.logout();
-    } finally { await client.disconnect(); }
+    } finally {
+      await client.disconnect();
+    }
   }
 
-  Future<void> setFlagged(MailAccountConfig config, String password, {required int uid, required String mailboxPath, required bool flagged}) async {
+  Future<void> setFlagged(MailAccountConfig config, String password,
+      {required int uid,
+      required String mailboxPath,
+      required bool flagged}) async {
     final client = ImapClient(isLogEnabled: false);
     try {
       await _connectImap(client, config, password);
       await client.selectMailboxByPath(mailboxPath);
-      await client.uidStore(MessageSequence.fromId(uid), [MessageFlags.flagged], action: flagged ? StoreAction.add : StoreAction.remove);
+      await client.uidStore(MessageSequence.fromId(uid), [MessageFlags.flagged],
+          action: flagged ? StoreAction.add : StoreAction.remove);
       await client.logout();
-    } finally { await client.disconnect(); }
+    } finally {
+      await client.disconnect();
+    }
   }
 
-  Future<void> moveMessage(MailAccountConfig config, String password, {required int uid, required String fromMailboxPath, required MailFolder toFolder}) async {
+  Future<void> moveMessage(MailAccountConfig config, String password,
+      {required int uid,
+      required String fromMailboxPath,
+      required MailFolder toFolder}) async {
     final client = ImapClient(isLogEnabled: false);
     try {
       await _connectImap(client, config, password);
       await client.selectMailboxByPath(fromMailboxPath);
       final boxes = await client.listMailboxes();
       final dest = _resolveMailbox(boxes, toFolder);
-      final destPath = dest?.path ?? switch(toFolder){MailFolder.trash=>'Trash',MailFolder.archive=>'Archive',MailFolder.spam=>'Junk',MailFolder.inbox=>'INBOX',MailFolder.sent=>'Sent',MailFolder.drafts=>'Drafts',MailFolder.custom=>'INBOX'};
-      await client.uidMove(MessageSequence.fromId(uid), targetMailboxPath: destPath);
+      final destPath = dest?.path ??
+          switch (toFolder) {
+            MailFolder.trash => 'Trash',
+            MailFolder.archive => 'Archive',
+            MailFolder.spam => 'Junk',
+            MailFolder.inbox => 'INBOX',
+            MailFolder.sent => 'Sent',
+            MailFolder.drafts => 'Drafts',
+            MailFolder.custom => 'INBOX'
+          };
+      await client.uidMove(MessageSequence.fromId(uid),
+          targetMailboxPath: destPath);
       await client.logout();
-    } finally { await client.disconnect(); }
+    } finally {
+      await client.disconnect();
+    }
   }
 
-  Future<void> deleteMessage(MailAccountConfig config, String password, {required int uid, required String mailboxPath}) async {
+  Future<void> deleteMessage(MailAccountConfig config, String password,
+      {required int uid, required String mailboxPath}) async {
     final client = ImapClient(isLogEnabled: false);
     try {
       await _connectImap(client, config, password);
       await client.selectMailboxByPath(mailboxPath);
-      await client.uidStore(MessageSequence.fromId(uid), [MessageFlags.deleted], action: StoreAction.add);
+      await client.uidStore(MessageSequence.fromId(uid), [MessageFlags.deleted],
+          action: StoreAction.add);
       await client.expunge();
       await client.logout();
-    } finally { await client.disconnect(); }
+    } finally {
+      await client.disconnect();
+    }
   }
 
-  Future<void> sendMessage(MailAccountConfig config, String password, MimeMessage message) async {
+  Future<void> sendMessage(
+      MailAccountConfig config, String password, MimeMessage message) async {
     final client = SmtpClient('kmail', isLogEnabled: false);
     try {
       await _connectSmtp(client, config, password);
@@ -116,7 +150,8 @@ class MailService {
     }
   }
 
-  Future<void> _connectImap(ImapClient client, MailAccountConfig config, String password) async {
+  Future<void> _connectImap(
+      ImapClient client, MailAccountConfig config, String password) async {
     final isSecure = config.imapSecurity == MailSecurity.sslTls;
     await _connectServer(client, config.imapHost, config.imapPort, isSecure);
     if (config.imapSecurity == MailSecurity.startTls) {
@@ -125,7 +160,8 @@ class MailService {
     await client.login(config.username, password);
   }
 
-  Future<void> _connectSmtp(SmtpClient client, MailAccountConfig config, String password) async {
+  Future<void> _connectSmtp(
+      SmtpClient client, MailAccountConfig config, String password) async {
     final isSecure = config.smtpSecurity == MailSecurity.sslTls;
     await _connectServer(client, config.smtpHost, config.smtpPort, isSecure);
     await client.ehlo();
@@ -135,7 +171,8 @@ class MailService {
     await client.authenticate(config.username, password, AuthMechanism.plain);
   }
 
-  Future<void> _connectServer(dynamic client, String host, int port, bool isSecure) async {
+  Future<void> _connectServer(
+      dynamic client, String host, int port, bool isSecure) async {
     final fn = client.connectToServer as Function;
     try {
       await Function.apply(fn, [host, port], {#isSecure: isSecure});
@@ -172,7 +209,8 @@ class MailService {
     bool hasFlag(Mailbox m, MailboxFlag flag) => m.flags.contains(flag);
     for (final box in boxes) {
       final match = switch (folder) {
-        MailFolder.inbox => hasFlag(box, MailboxFlag.inbox) || box.name.toLowerCase() == 'inbox',
+        MailFolder.inbox =>
+          hasFlag(box, MailboxFlag.inbox) || box.name.toLowerCase() == 'inbox',
         MailFolder.sent => hasFlag(box, MailboxFlag.sent),
         MailFolder.drafts => hasFlag(box, MailboxFlag.drafts),
         MailFolder.trash => hasFlag(box, MailboxFlag.trash),

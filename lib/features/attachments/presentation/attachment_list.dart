@@ -46,21 +46,30 @@ class _AttachmentCard extends StatelessWidget {
               Icon(_iconFor(attachment.type), color: colors.primary),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(attachment.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleSmall),
+                child: Text(attachment.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text('${attachment.extension.toUpperCase()} • ${_formatBytes(attachment.sizeBytes)}', style: Theme.of(context).textTheme.bodySmall),
+          Text(
+              '${attachment.extension.toUpperCase()} • ${_formatBytes(attachment.sizeBytes)}',
+              style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           Row(
             children: [
               OutlinedButton(
-                onPressed: () => showDialog<void>(context: context, builder: (_) => AttachmentPreviewDialog(attachment: attachment)),
+                onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (_) =>
+                        AttachmentPreviewDialog(attachment: attachment)),
                 child: const Text('Preview'),
               ),
               const SizedBox(width: 8),
-              TextButton(onPressed: () => _save(context), child: const Text('Save')),
+              TextButton(
+                  onPressed: () => _save(context), child: const Text('Save')),
             ],
           ),
         ],
@@ -72,10 +81,13 @@ class _AttachmentCard extends StatelessWidget {
     final bytes = attachment.bytes;
     final text = attachment.previewText;
     if (bytes == null && text == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This attachment is not available for local save yet.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('This attachment is not available for local save yet.')));
       return;
     }
-    final ext = attachment.extension.isNotEmpty ? '.${attachment.extension}' : null;
+    final ext =
+        attachment.extension.isNotEmpty ? '.${attachment.extension}' : null;
     final savePath = await FilePicker.platform.saveFile(
       dialogTitle: 'Save attachment',
       fileName: attachment.name,
@@ -90,7 +102,8 @@ class _AttachmentCard extends StatelessWidget {
       await target.writeAsString(text!, flush: true);
     }
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved to ${p.basename(target.path)}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Saved to ${p.basename(target.path)}')));
     }
   }
 

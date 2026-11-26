@@ -15,7 +15,8 @@ class SecureCredentialStorage implements CredentialStorage {
       : _secure = secure ?? const FlutterSecureStorage();
   final FlutterSecureStorage _secure;
   @override
-  Future<void> write(String key, String value) => _secure.write(key: key, value: value);
+  Future<void> write(String key, String value) =>
+      _secure.write(key: key, value: value);
   @override
   Future<String?> read(String key) => _secure.read(key: key);
   @override

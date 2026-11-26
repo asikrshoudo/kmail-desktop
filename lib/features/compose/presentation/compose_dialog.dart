@@ -42,7 +42,8 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
     super.initState();
     final reply = widget.replyTo;
     final subject = switch (widget.mode) {
-      ComposeMode.reply || ComposeMode.replyAll =>
+      ComposeMode.reply ||
+      ComposeMode.replyAll =>
         reply != null ? 'Re: ${reply.subject}' : '',
       ComposeMode.forward => reply != null ? 'Fwd: ${reply.subject}' : '',
       ComposeMode.newMessage => '',
@@ -94,8 +95,13 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  Expanded(child: Text(_title(), style: Theme.of(context).textTheme.titleLarge)),
-                  IconButton(tooltip: 'Close', onPressed: _confirmClose, icon: const Icon(Icons.close_rounded)),
+                  Expanded(
+                      child: Text(_title(),
+                          style: Theme.of(context).textTheme.titleLarge)),
+                  IconButton(
+                      tooltip: 'Close',
+                      onPressed: _confirmClose,
+                      icon: const Icon(Icons.close_rounded)),
                 ],
               ),
             ),
@@ -107,13 +113,20 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                   children: [
                     if (accounts.isNotEmpty)
                       DropdownButtonFormField<String>(
-                        value: accounts.any((a) => a.id == _selectedAccountId) ? _selectedAccountId : accounts.first.id,
+                        value: accounts.any((a) => a.id == _selectedAccountId)
+                            ? _selectedAccountId
+                            : accounts.first.id,
                         decoration: const InputDecoration(labelText: 'From'),
                         items: [
                           for (final a in accounts)
-                            DropdownMenuItem(value: a.id, child: Text('${a.displayName} <${a.email}>', overflow: TextOverflow.ellipsis)),
+                            DropdownMenuItem(
+                                value: a.id,
+                                child: Text('${a.displayName} <${a.email}>',
+                                    overflow: TextOverflow.ellipsis)),
                         ],
-                        onChanged: _sending ? null : (v) => setState(() => _selectedAccountId = v),
+                        onChanged: _sending
+                            ? null
+                            : (v) => setState(() => _selectedAccountId = v),
                       )
                     else
                       Container(
@@ -122,9 +135,12 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                         decoration: BoxDecoration(
                           color: colors.warning.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(AppRadii.md),
-                          border: Border.all(color: colors.warning.withValues(alpha: 0.25)),
+                          border: Border.all(
+                              color: colors.warning.withValues(alpha: 0.25)),
                         ),
-                        child: Text('No account configured. Add an account before sending.', style: TextStyle(color: colors.warning)),
+                        child: Text(
+                            'No account configured. Add an account before sending.',
+                            style: TextStyle(color: colors.warning)),
                       ),
                     const SizedBox(height: 8),
                     _field('To', _to),
@@ -136,7 +152,9 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                     ] else
                       Align(
                         alignment: Alignment.centerRight,
-                        child: TextButton(onPressed: () => setState(() => _showCcBcc = true), child: const Text('Add Cc/Bcc')),
+                        child: TextButton(
+                            onPressed: () => setState(() => _showCcBcc = true),
+                            child: const Text('Add Cc/Bcc')),
                       ),
                     const SizedBox(height: 8),
                     _field('Subject', _subject),
@@ -149,7 +167,8 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                           label: const Text('Attach files'),
                         ),
                         const SizedBox(width: 8),
-                        Text('Plain text/HTML supported on send', style: Theme.of(context).textTheme.bodySmall),
+                        Text('Plain text/HTML supported on send',
+                            style: Theme.of(context).textTheme.bodySmall),
                       ],
                     ),
                     if (_attachments.isNotEmpty) ...[
@@ -163,8 +182,12 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                           itemBuilder: (context, i) {
                             final a = _attachments[i];
                             return InputChip(
-                              label: Text(a.name, overflow: TextOverflow.ellipsis),
-                              onDeleted: _sending ? null : () => setState(() => _attachments.removeAt(i)),
+                              label:
+                                  Text(a.name, overflow: TextOverflow.ellipsis),
+                              onDeleted: _sending
+                                  ? null
+                                  : () =>
+                                      setState(() => _attachments.removeAt(i)),
                             );
                           },
                         ),
@@ -177,7 +200,8 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                         maxLines: null,
                         expands: true,
                         textAlignVertical: TextAlignVertical.top,
-                        decoration: const InputDecoration(hintText: 'Write your message...'),
+                        decoration: const InputDecoration(
+                            hintText: 'Write your message...'),
                       ),
                     ),
                   ],
@@ -195,12 +219,17 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
                     label: const Text('Save draft'),
                   ),
                   const SizedBox(width: 8),
-                  TextButton(onPressed: _sending ? null : _discard, child: const Text('Discard')),
+                  TextButton(
+                      onPressed: _sending ? null : _discard,
+                      child: const Text('Discard')),
                   const Spacer(),
                   FilledButton.icon(
                     onPressed: _sending || accounts.isEmpty ? null : _send,
                     icon: _sending
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.send_rounded, size: 18),
                     label: Text(_sending ? 'Sending...' : 'Send'),
                   ),
@@ -225,21 +254,30 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
         decoration: InputDecoration(labelText: label),
       );
 
-  EmailMessage _buildMessage({required MailFolder folder, required bool draft}) {
+  EmailMessage _buildMessage(
+      {required MailFolder folder, required bool draft}) {
     final now = DateTime.now();
     final state = ref.read(inboxControllerProvider);
     final MailAccountConfig? account = state.accounts
         .where((a) => a.id == _selectedAccountId)
         .cast<MailAccountConfig?>()
         .firstWhere((a) => a != null, orElse: () => state.activeAccount);
-    final from = account ?? (state.accounts.isNotEmpty ? state.accounts.first : null);
+    final from =
+        account ?? (state.accounts.isNotEmpty ? state.accounts.first : null);
     EmailAddress parse(String raw) {
       final value = raw.trim();
       if (value.isEmpty) return const EmailAddress(name: '', email: '');
-      return EmailAddress(name: value.contains('@') ? value.split('@').first : value, email: value);
+      return EmailAddress(
+          name: value.contains('@') ? value.split('@').first : value,
+          email: value);
     }
 
-    List<EmailAddress> parseList(String raw) => raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).map(parse).toList();
+    List<EmailAddress> parseList(String raw) => raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .map(parse)
+        .toList();
     final body = _body.text;
     final id = widget.replyTo != null && draft
         ? 'local-draft-${widget.replyTo!.id}-${widget.mode.name}'
@@ -248,14 +286,17 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
       id: id,
       accountId: from?.id ?? '',
       folder: folder,
-      sender: EmailAddress(name: from?.displayName ?? 'Kmail', email: from?.email ?? ''),
+      sender: EmailAddress(
+          name: from?.displayName ?? 'Kmail', email: from?.email ?? ''),
       to: parseList(_to.text),
       cc: parseList(_cc.text),
       bcc: parseList(_bcc.text),
-      subject: _subject.text.trim().isEmpty ? '(No subject)' : _subject.text.trim(),
+      subject:
+          _subject.text.trim().isEmpty ? '(No subject)' : _subject.text.trim(),
       preview: body.trim().replaceAll(RegExp(r'\s+'), ' ').take(140),
       bodyPlainText: body,
-      bodyHtml: '<div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.6">${_escape(body)}</div>',
+      bodyHtml:
+          '<div style="font-family:Segoe UI,Arial,sans-serif;line-height:1.6">${_escape(body)}</div>',
       date: now,
       isDraft: draft,
       isUnread: false,
@@ -264,7 +305,8 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
   }
 
   Future<void> _pickAttachments() async {
-    final result = await FilePicker.platform.pickFiles(allowMultiple: true, withData: false);
+    final result = await FilePicker.platform
+        .pickFiles(allowMultiple: true, withData: false);
     if (result == null) return;
     setState(() {
       for (final f in result.files) {
@@ -282,41 +324,83 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
   AttachmentType _typeForName(String name) {
     final ext = name.contains('.') ? name.split('.').last.toLowerCase() : '';
     return switch (ext) {
-      'pdf' => AttachmentType.pdf, 'png' => AttachmentType.png, 'jpg' || 'jpeg' => AttachmentType.jpg,
-      'gif' => AttachmentType.gif, 'webp' => AttachmentType.webp, 'txt' || 'md' || 'log' => AttachmentType.txt,
-      'csv' => AttachmentType.csv, 'doc' || 'docx' => AttachmentType.docx, 'xls' || 'xlsx' => AttachmentType.xlsx,
-      'zip' || 'rar' || '7z' => AttachmentType.zip, 'html' || 'htm' => AttachmentType.html, _ => AttachmentType.unknown,
+      'pdf' => AttachmentType.pdf,
+      'png' => AttachmentType.png,
+      'jpg' || 'jpeg' => AttachmentType.jpg,
+      'gif' => AttachmentType.gif,
+      'webp' => AttachmentType.webp,
+      'txt' || 'md' || 'log' => AttachmentType.txt,
+      'csv' => AttachmentType.csv,
+      'doc' || 'docx' => AttachmentType.docx,
+      'xls' || 'xlsx' => AttachmentType.xlsx,
+      'zip' || 'rar' || '7z' => AttachmentType.zip,
+      'html' || 'htm' => AttachmentType.html,
+      _ => AttachmentType.unknown,
     };
   }
 
   List<String> _parseEmails(String raw, {bool collectInvalid = false}) {
-    final parts = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    final parts =
+        raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
     final re = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    final valid = <String>[]; final invalid = <String>[];
-    for (final p in parts) { (re.hasMatch(p) ? valid : invalid).add(p); }
+    final valid = <String>[];
+    final invalid = <String>[];
+    for (final p in parts) {
+      (re.hasMatch(p) ? valid : invalid).add(p);
+    }
     return collectInvalid ? invalid : valid;
   }
 
   Future<void> _saveDraft() async {
-    await ref.read(inboxControllerProvider.notifier).saveDraft(_buildMessage(folder: MailFolder.drafts, draft: true));
+    await ref
+        .read(inboxControllerProvider.notifier)
+        .saveDraft(_buildMessage(folder: MailFolder.drafts, draft: true));
     if (!mounted) return;
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Draft saved locally.')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Draft saved locally.')));
   }
 
   void _discard() async {
-    if (_to.text.isEmpty && _subject.text.isEmpty && _body.text.trim().isEmpty && _attachments.isEmpty) { Navigator.of(context).pop(); return; }
-    final confirm = await showDialog<bool>(context: context, builder: (c) => AlertDialog(title: const Text('Discard draft?'), content: const Text('This will discard unsaved content.'), actions: [TextButton(onPressed: ()=>Navigator.pop(c,false), child: const Text('Cancel')), FilledButton(onPressed: ()=>Navigator.pop(c,true), child: const Text('Discard'))]));
+    if (_to.text.isEmpty &&
+        _subject.text.isEmpty &&
+        _body.text.trim().isEmpty &&
+        _attachments.isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final confirm = await showDialog<bool>(
+        context: context,
+        builder: (c) => AlertDialog(
+                title: const Text('Discard draft?'),
+                content: const Text('This will discard unsaved content.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(c, false),
+                      child: const Text('Cancel')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(c, true),
+                      child: const Text('Discard'))
+                ]));
     if (confirm == true && mounted) Navigator.of(context).pop();
   }
 
   Future<void> _send() async {
-    if (_parseEmails(_to.text).isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add at least one valid recipient.'))); return; }
-    if (_parseEmails(_cc.text, collectInvalid: true).isNotEmpty || _parseEmails(_bcc.text, collectInvalid: true).isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('One or more CC/BCC addresses are invalid.'))); return;
+    if (_parseEmails(_to.text).isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Add at least one valid recipient.')));
+      return;
+    }
+    if (_parseEmails(_cc.text, collectInvalid: true).isNotEmpty ||
+        _parseEmails(_bcc.text, collectInvalid: true).isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('One or more CC/BCC addresses are invalid.')));
+      return;
     }
     setState(() => _sending = true);
-    final (ok, msg) = await ref.read(inboxControllerProvider.notifier).sendMessage(_buildMessage(folder: MailFolder.sent, draft: false));
+    final (ok, msg) = await ref
+        .read(inboxControllerProvider.notifier)
+        .sendMessage(_buildMessage(folder: MailFolder.sent, draft: false));
     if (!mounted) return;
     setState(() => _sending = false);
     if (ok) {
@@ -325,8 +409,11 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
     }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
+
   Future<void> _confirmClose() async {
-    if (_to.text.isEmpty && _subject.text.isEmpty && _body.text.trim().isEmpty) {
+    if (_to.text.isEmpty &&
+        _subject.text.isEmpty &&
+        _body.text.trim().isEmpty) {
       Navigator.of(context).pop();
       return;
     }
@@ -362,4 +449,3 @@ class _ComposeDialogState extends ConsumerState<ComposeDialog> {
 extension on String {
   String take(int max) => length <= max ? this : substring(0, max);
 }
-

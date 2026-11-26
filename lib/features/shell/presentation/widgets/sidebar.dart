@@ -22,7 +22,10 @@ class Sidebar extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.sm,
             ),
             child: Row(
               children: [
@@ -35,18 +38,21 @@ class Sidebar extends ConsumerWidget {
                     border: Border.all(color: colors.border),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: Icon(Icons.mail_outline_rounded, color: colors.primary),
+                  child:
+                      Icon(Icons.mail_outline_rounded, color: colors.primary),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Kmail', style: Theme.of(context).textTheme.titleMedium),
+                      Text('Kmail',
+                          style: Theme.of(context).textTheme.titleMedium),
                       Text(
                         inbox.isUnified
                             ? 'All accounts'
-                            : (inbox.activeAccount?.email ?? 'No account connected'),
+                            : (inbox.activeAccount?.email ??
+                                'No account connected'),
                         style: Theme.of(context).textTheme.bodySmall,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -69,7 +75,9 @@ class Sidebar extends ConsumerWidget {
                   _SidebarItem(
                     item: folder,
                     selected: inbox.selectedView == folder.view,
-                    onTap: () => ref.read(inboxControllerProvider.notifier).selectView(folder.view),
+                    onTap: () => ref
+                        .read(inboxControllerProvider.notifier)
+                        .selectView(folder.view),
                   ),
               ],
             ),
@@ -103,11 +111,16 @@ class _AccountSwitcher extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors.tokens;
     final active = inbox.activeAccount;
-    final label = inbox.isUnified ? 'All Inboxes' : (active?.displayName ?? 'No account');
+    final label =
+        inbox.isUnified ? 'All Inboxes' : (active?.displayName ?? 'No account');
     final email = inbox.isUnified
-        ? (inbox.hasAccounts ? 'Unified view across accounts' : 'Add an account to get started')
+        ? (inbox.hasAccounts
+            ? 'Unified view across accounts'
+            : 'Add an account to get started')
         : (active?.email ?? 'Connect an email account');
-    final color = inbox.isUnified ? colors.primary : Color(active?.colorValue ?? 0xFF1F4B99);
+    final color = inbox.isUnified
+        ? colors.primary
+        : Color(active?.colorValue ?? 0xFF1F4B99);
 
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadii.lg),
@@ -125,19 +138,29 @@ class _AccountSwitcher extends ConsumerWidget {
             CircleAvatar(
               radius: 16,
               backgroundColor: color,
-              child: Icon(inbox.isUnified ? Icons.all_inbox_rounded : Icons.person_rounded, size: 16, color: Colors.white),
+              child: Icon(
+                  inbox.isUnified
+                      ? Icons.all_inbox_rounded
+                      : Icons.person_rounded,
+                  size: 16,
+                  color: Colors.white),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: Theme.of(context).textTheme.labelLarge, overflow: TextOverflow.ellipsis),
-                  Text(email, style: Theme.of(context).textTheme.bodySmall, overflow: TextOverflow.ellipsis),
+                  Text(label,
+                      style: Theme.of(context).textTheme.labelLarge,
+                      overflow: TextOverflow.ellipsis),
+                  Text(email,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
-            Icon(Icons.unfold_more_rounded, color: colors.textSecondary, size: 18),
+            Icon(Icons.unfold_more_rounded,
+                color: colors.textSecondary, size: 18),
           ],
         ),
       ),
@@ -157,42 +180,62 @@ class _AccountSwitcher extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Accounts', style: Theme.of(context).textTheme.titleMedium),
+                Text('Accounts',
+                    style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
-                  leading: const CircleAvatar(child: Icon(Icons.all_inbox_rounded)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.md)),
+                  leading:
+                      const CircleAvatar(child: Icon(Icons.all_inbox_rounded)),
                   title: const Text('All Inboxes'),
-                  subtitle: const Text('Unified inbox across connected accounts'),
-                  trailing: inbox.isUnified ? const Icon(Icons.check_rounded) : null,
+                  subtitle:
+                      const Text('Unified inbox across connected accounts'),
+                  trailing:
+                      inbox.isUnified ? const Icon(Icons.check_rounded) : null,
                   onTap: () {
-                    ref.read(inboxControllerProvider.notifier).selectAccount(allAccountsId);
+                    ref
+                        .read(inboxControllerProvider.notifier)
+                        .selectAccount(allAccountsId);
                     Navigator.pop(context);
                   },
                 ),
                 for (final a in inbox.accounts)
                   ListTile(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.md)),
                     leading: CircleAvatar(
                       backgroundColor: Color(a.colorValue),
-                      child: Text(a.displayName.isNotEmpty ? a.displayName[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white)),
+                      child: Text(
+                          a.displayName.isNotEmpty
+                              ? a.displayName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(color: Colors.white)),
                     ),
                     title: Text(a.displayName),
                     subtitle: Text(a.email),
-                    trailing: inbox.selectedAccountId == a.id ? const Icon(Icons.check_rounded) : null,
+                    trailing: inbox.selectedAccountId == a.id
+                        ? const Icon(Icons.check_rounded)
+                        : null,
                     onTap: () {
-                      ref.read(inboxControllerProvider.notifier).selectAccount(a.id);
+                      ref
+                          .read(inboxControllerProvider.notifier)
+                          .selectAccount(a.id);
                       Navigator.pop(context);
                     },
                   ),
                 const Divider(),
                 ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.md)),
                   leading: const Icon(Icons.add_rounded),
                   title: const Text('Add account'),
                   onTap: () {
                     Navigator.pop(context);
-                    showDialog<void>(context: context, barrierDismissible: false, builder: (_) => const AccountSetupDialog());
+                    showDialog<void>(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => const AccountSetupDialog());
                   },
                 ),
               ],
@@ -205,7 +248,8 @@ class _AccountSwitcher extends ConsumerWidget {
 }
 
 class _SidebarItem extends StatelessWidget {
-  const _SidebarItem({required this.item, required this.selected, required this.onTap});
+  const _SidebarItem(
+      {required this.item, required this.selected, required this.onTap});
   final FolderItem item;
   final bool selected;
   final VoidCallback onTap;
@@ -213,7 +257,8 @@ class _SidebarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors.tokens;
-    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md));
+    final shape = RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadii.md));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
@@ -227,26 +272,38 @@ class _SidebarItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Icon(item.icon, size: 20, color: selected ? colors.primary : colors.textSecondary),
+                Icon(item.icon,
+                    size: 20,
+                    color: selected ? colors.primary : colors.textSecondary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     item.label,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                          color: selected ? colors.textPrimary : colors.textPrimary,
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.w500,
+                          color: selected
+                              ? colors.textPrimary
+                              : colors.textPrimary,
                         ),
                   ),
                 ),
                 if (item.count > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: selected ? colors.primary.withValues(alpha: 0.12) : colors.surfaceMuted,
+                      color: selected
+                          ? colors.primary.withValues(alpha: 0.12)
+                          : colors.surfaceMuted,
                       borderRadius: BorderRadius.circular(AppRadii.pill),
-                      border: Border.all(color: selected ? colors.primary.withValues(alpha: 0.18) : colors.border),
+                      border: Border.all(
+                          color: selected
+                              ? colors.primary.withValues(alpha: 0.18)
+                              : colors.border),
                     ),
-                    child: Text('${item.count}', style: Theme.of(context).textTheme.labelSmall),
+                    child: Text('${item.count}',
+                        style: Theme.of(context).textTheme.labelSmall),
                   ),
               ],
             ),

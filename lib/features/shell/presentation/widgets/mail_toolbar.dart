@@ -38,7 +38,9 @@ class MailToolbar extends ConsumerWidget {
               onPressed: inbox.isSyncing
                   ? null
                   : () async {
-                      await ref.read(inboxControllerProvider.notifier).refresh();
+                      await ref
+                          .read(inboxControllerProvider.notifier)
+                          .refresh();
                       if (!context.mounted) return;
                       final s = ref.read(inboxControllerProvider);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -46,7 +48,10 @@ class MailToolbar extends ConsumerWidget {
                       ));
                     },
               icon: inbox.isSyncing
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.refresh_rounded)),
           IconButton(
               tooltip: 'Select all visible',
