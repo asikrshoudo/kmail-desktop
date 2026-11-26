@@ -184,8 +184,8 @@ class SettingsScreen extends ConsumerWidget {
                               child: Text('A',
                                   style: TextStyle(color: Colors.white))),
                           title: Text('Alex Morgan'),
-                          subtitle: Text(
-                              'alex.morgan@kmail.app • Default (mock)'),
+                          subtitle:
+                              Text('alex.morgan@kmail.app • Default (mock)'),
                         ),
                         Align(
                           alignment: Alignment.centerLeft,
