@@ -96,7 +96,7 @@ class MockMailRepository {
         to: const [EmailAddress(name: 'Alex Morgan', email: 'alex.morgan@kmail.app')],
         subject: 'Your receipt for November workspace plan',
         preview: 'Thanks for your payment. Your receipt is attached.',
-        bodyPlainText: 'Thanks for your payment.\nAmount: $24.00\nPlan: Workspace Plus\nInvoice: INV-2048',
+        bodyPlainText: 'Thanks for your payment.\nAmount: \$24.00\nPlan: Workspace Plus\nInvoice: INV-2048',
         bodyHtml: '''
 <div style="font-family:Segoe UI,Arial,sans-serif;color:#1f2937;line-height:1.6">
   <p>Thanks for your payment.</p>
@@ -382,3 +382,4 @@ class MockMailRepository {
     ];
   }
 }
+
