@@ -37,7 +37,8 @@ Email HTML is treated as untrusted. `HtmlSanitizer` applies restrictive cleanup 
 ### Secrets/credentials
 
 - No real credentials collected or stored.
-- No secrets committed; workflow has no signing secrets.
+- No secrets committed; no private signing keys/certificates committed.
+- CI supports optional Authenticode signing only through GitHub Actions secrets (WINDOWS_CERTIFICATE_BASE64, WINDOWS_CERTIFICATE_PASSWORD, optional WINDOWS_CERTIFICATE_SHA1, WINDOWS_TIMESTAMP_URL). Unsigned builds are clearly labeled.
 - Future phases must use OS-backed secure storage and encrypted local DB fields for secrets.
 
 ## Not implemented yet (planned)

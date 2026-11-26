@@ -25,8 +25,9 @@
 | Attachment preview | Implemented/Mock | Image mock, text/CSV, sanitized HTML; unsupported/PDF fallback. |
 | Settings persistence | Implemented | `shared_preferences` for theme/density/motion/blur/remote images/text scale. |
 | Unit/widget tests | Implemented | Added sanitizer, inbox controller, app smoke tests. Not run locally (no Flutter SDK). |
-| GitHub Actions Windows build | Implemented | Workflow created; cloud verification pending after push. |
-| Docs | Implemented | Required docs added/updated for Phase 1. |
+| GitHub Actions Windows build | Implemented | Workflow builds, tests, applies Windows branding, verifies metadata/signature state, packages checksums, and uploads signed/unsigned artifact. Latest verification: successful unsigned dev artifact run. |
+| Windows identity/branding/signing prep | Implemented (partial) | Kmail/TheKami identity, icon, AUMID, metadata, optional Authenticode signing pipeline, and docs added. No public signing cert configured; artifact unsigned until secrets provided. |
+| Docs | Implemented | Required Phase 1 docs plus WINDOWS_SIGNING.md added/updated. |
 
 ## Deferred to Phase 2+
 

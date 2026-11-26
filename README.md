@@ -25,6 +25,17 @@ Kmail Desktop is a **Phase 1 Windows-first Flutter desktop foundation** for Kmai
 - Real send/receive, attachment download, or MIME parsing
 - Production-ready PDF rendering guarantee (fallback UI is used unless CI verifies support)
 
+## Windows identity & release
+
+- Product: **Kmail** (Kmail.exe)
+- Publisher: **TheKami**
+- Canonical identifier: com.thekami.kmail
+- Windows AppUserModelID: TheKami.Kmail
+- Icon: official kmail_logo.png / ssets/branding/kmail.ico applied by CI Windows branding script
+- Code signing: **optional in CI**. If valid signing secrets are configured, workflow signs and verifies Authenticode signature; otherwise it produces a clearly labeled **unsigned development artifact**. No self-signed public certs, no SmartScreen/Defender bypass.
+
+See [WINDOWS_BUILD.md](WINDOWS_BUILD.md) and [WINDOWS_SIGNING.md](WINDOWS_SIGNING.md).
+
 ## Cloud-only Flutter development
 
 Flutter/Dart are **not required locally** on the owner's PC. All Flutter commands run in GitHub Actions:

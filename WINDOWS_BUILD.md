@@ -26,7 +26,7 @@ Steps:
 8. `flutter test`
 9. `flutter build windows --release`
 10. Zip `build/windows/x64/runner/Release`
-11. Upload artifact `kmail-windows-release` (14 days)
+11. Upload artifact `kmail-windows-signed/unsigned` (14 days)
 
 ## Downloading artifact
 
