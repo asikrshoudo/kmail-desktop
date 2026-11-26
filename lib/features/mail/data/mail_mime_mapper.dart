@@ -80,7 +80,10 @@ class MailMimeMapper {
       isUnread: isUnread,
       isStarred: isStarred,
       attachments: attachments,
-      hasRemoteImages: RegExp(r'<img\b[^>]*src\s*=\s*["\']https?:', caseSensitive: false).hasMatch(bodyHtml),
+      hasRemoteImages: RegExp(
+        "<img\\b[^>]*src\\s*=\\s*[\"']https?:",
+        caseSensitive: false,
+      ).hasMatch(bodyHtml),
       isDraft: folder == MailFolder.drafts,
       remoteUid: mime.uid,
     );
