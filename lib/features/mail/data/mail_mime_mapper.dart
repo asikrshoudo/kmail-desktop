@@ -74,7 +74,7 @@ class MailMimeMapper {
 
     final Object? mimeIdRaw = (mime as dynamic).messageId;
     final String? mimeId = mimeIdRaw is String ? mimeIdRaw : null;
-    final id = mime.guid ??
+    final String id = (mime.guid as String?) ??
         mimeId ??
         '$accountId-${folder.name}-${date.microsecondsSinceEpoch}-${subject.hashCode}';
 
