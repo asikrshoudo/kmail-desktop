@@ -36,6 +36,11 @@ void main() {
       final controller = container.read(inboxControllerProvider.notifier);
       final id =
           container.read(inboxControllerProvider).visibleMessages.first.id;
+      final wasStarred = container
+          .read(inboxControllerProvider)
+          .messages
+          .firstWhere((m) => m.id == id)
+          .isStarred;
 
       controller.toggleStar(id);
       expect(
@@ -44,7 +49,7 @@ void main() {
               .messages
               .firstWhere((m) => m.id == id)
               .isStarred,
-          isTrue);
+          !wasStarred);
 
       controller.toggleSelected(id);
       controller.archiveSelected();
