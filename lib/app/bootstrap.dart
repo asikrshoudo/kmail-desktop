@@ -44,6 +44,7 @@ class KmailAppBootstrap extends ConsumerWidget {
   }
 }
 
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async {
+final sharedPreferencesProvider =
+    FutureProvider<SharedPreferences>((ref) async {
   return SharedPreferences.getInstance();
 });

@@ -42,22 +42,33 @@ class _AttachmentCard extends StatelessWidget {
               Icon(_iconFor(attachment.type), color: colors.primary),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(attachment.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleSmall),
+                child: Text(attachment.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text('${attachment.extension.toUpperCase()} • ${_formatBytes(attachment.sizeBytes)}', style: Theme.of(context).textTheme.bodySmall),
+          Text(
+              '${attachment.extension.toUpperCase()} • ${_formatBytes(attachment.sizeBytes)}',
+              style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           Row(
             children: [
               OutlinedButton(
-                onPressed: () => showDialog<void>(context: context, builder: (_) => AttachmentPreviewDialog(attachment: attachment)),
+                onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (_) =>
+                        AttachmentPreviewDialog(attachment: attachment)),
                 child: const Text('Preview'),
               ),
               const SizedBox(width: 8),
               TextButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Save/download is planned for a future phase.'))),
+                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text(
+                            'Save/download is planned for a future phase.'))),
                 child: const Text('Save'),
               ),
             ],

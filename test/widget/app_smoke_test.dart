@@ -12,7 +12,9 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [sharedPreferencesProvider.overrideWith((ref) async => prefs)],
+        overrides: [
+          sharedPreferencesProvider.overrideWith((ref) async => prefs)
+        ],
         child: const KmailApp(),
       ),
     );

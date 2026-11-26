@@ -21,7 +21,8 @@ class Sidebar extends ConsumerWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
             child: Row(
               children: [
                 Container(
@@ -31,15 +32,18 @@ class Sidebar extends ConsumerWidget {
                     color: colors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.mail_outline_rounded, color: colors.primary),
+                  child:
+                      Icon(Icons.mail_outline_rounded, color: colors.primary),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Kmail', style: Theme.of(context).textTheme.titleMedium),
-                      Text('Demo workspace', style: Theme.of(context).textTheme.bodySmall),
+                      Text('Kmail',
+                          style: Theme.of(context).textTheme.titleMedium),
+                      Text('Demo workspace',
+                          style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
                 ),
@@ -60,15 +64,20 @@ class Sidebar extends ConsumerWidget {
                   CircleAvatar(
                     radius: 16,
                     backgroundColor: Color(account.colorValue),
-                    child: Text(account.name.substring(0, 1), style: const TextStyle(color: Colors.white)),
+                    child: Text(account.name.substring(0, 1),
+                        style: const TextStyle(color: Colors.white)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(account.name, style: Theme.of(context).textTheme.labelLarge, overflow: TextOverflow.ellipsis),
-                        Text(account.email, style: Theme.of(context).textTheme.bodySmall, overflow: TextOverflow.ellipsis),
+                        Text(account.name,
+                            style: Theme.of(context).textTheme.labelLarge,
+                            overflow: TextOverflow.ellipsis),
+                        Text(account.email,
+                            style: Theme.of(context).textTheme.bodySmall,
+                            overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
@@ -84,12 +93,20 @@ class Sidebar extends ConsumerWidget {
                 for (final folder in inbox.folders)
                   _SidebarItem(
                     item: folder,
-                    selected: inbox.selectedFolder == folder.folder || (folder.folder == MailFolder.starred && inbox.selectedFolder == MailFolder.starred),
-                    onTap: () => ref.read(inboxControllerProvider.notifier).selectFolder(folder.folder),
+                    selected: inbox.selectedFolder == folder.folder ||
+                        (folder.folder == MailFolder.starred &&
+                            inbox.selectedFolder == MailFolder.starred),
+                    onTap: () => ref
+                        .read(inboxControllerProvider.notifier)
+                        .selectFolder(folder.folder),
                   ),
                 const Padding(
                   padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
-                  child: Text('LABELS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+                  child: Text('LABELS',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5)),
                 ),
                 _LabelRow(label: 'Work', color: colors.info),
                 _LabelRow(label: 'Personal', color: colors.accent),
@@ -101,7 +118,9 @@ class Sidebar extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.sm),
             child: OutlinedButton.icon(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add account is planned for a future phase.')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content:
+                        Text('Add account is planned for a future phase.')));
               },
               icon: const Icon(Icons.add_rounded, size: 18),
               label: const Text('Add account'),
@@ -114,7 +133,8 @@ class Sidebar extends ConsumerWidget {
 }
 
 class _SidebarItem extends StatelessWidget {
-  const _SidebarItem({required this.item, required this.selected, required this.onTap});
+  const _SidebarItem(
+      {required this.item, required this.selected, required this.onTap});
   final FolderItem item;
   final bool selected;
   final VoidCallback onTap;
@@ -127,16 +147,20 @@ class _SidebarItem extends StatelessWidget {
       child: ListTile(
         dense: true,
         selected: selected,
-        leading: Icon(item.icon, size: 20, color: selected ? colors.primary : colors.textSecondary),
+        leading: Icon(item.icon,
+            size: 20, color: selected ? colors.primary : colors.textSecondary),
         title: Text(item.label),
         trailing: item.count > 0
             ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: selected ? colors.primary.withValues(alpha: 0.12) : colors.surfaceMuted,
+                  color: selected
+                      ? colors.primary.withValues(alpha: 0.12)
+                      : colors.surfaceMuted,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text('${item.count}', style: Theme.of(context).textTheme.labelSmall),
+                child: Text('${item.count}',
+                    style: Theme.of(context).textTheme.labelSmall),
               )
             : null,
         onTap: onTap,
@@ -156,7 +180,10 @@ class _LabelRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           const SizedBox(width: 10),
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
         ],

@@ -63,18 +63,23 @@ class SettingsController extends Notifier<AppSettings> {
   static const _remoteImagesKey = 'settings.remoteImages';
   static const _textScaleKey = 'settings.textScale';
 
-  SharedPreferences? get _prefs => ref.read(sharedPreferencesProvider).valueOrNull;
+  SharedPreferences? get _prefs =>
+      ref.read(sharedPreferencesProvider).valueOrNull;
 
   @override
   AppSettings build() {
     final prefs = ref.watch(sharedPreferencesProvider).valueOrNull;
     if (prefs == null) return const AppSettings();
     return AppSettings(
-      themeMode: ThemeMode.values[prefs.getInt(_themeKey) ?? ThemeMode.system.index],
-      density: DensitySetting.values[prefs.getInt(_densityKey) ?? DensitySetting.comfortable.index],
-      animation: AnimationSetting.values[prefs.getInt(_animationKey) ?? AnimationSetting.full.index],
+      themeMode:
+          ThemeMode.values[prefs.getInt(_themeKey) ?? ThemeMode.system.index],
+      density: DensitySetting.values[
+          prefs.getInt(_densityKey) ?? DensitySetting.comfortable.index],
+      animation: AnimationSetting
+          .values[prefs.getInt(_animationKey) ?? AnimationSetting.full.index],
       blurEnabled: prefs.getBool(_blurKey) ?? false,
-      remoteImages: RemoteImagesPolicy.values[prefs.getInt(_remoteImagesKey) ?? RemoteImagesPolicy.blocked.index],
+      remoteImages: RemoteImagesPolicy.values[
+          prefs.getInt(_remoteImagesKey) ?? RemoteImagesPolicy.blocked.index],
       textScale: prefs.getDouble(_textScaleKey) ?? 1.0,
     );
   }
@@ -111,4 +116,5 @@ class SettingsController extends Notifier<AppSettings> {
   }
 }
 
-final settingsControllerProvider = NotifierProvider<SettingsController, AppSettings>(SettingsController.new);
+final settingsControllerProvider =
+    NotifierProvider<SettingsController, AppSettings>(SettingsController.new);

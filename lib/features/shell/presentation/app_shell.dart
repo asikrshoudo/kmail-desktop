@@ -40,13 +40,16 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
-        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyN): const _ComposeIntent(),
-        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyF): const _SearchIntent(),
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyN):
+            const _ComposeIntent(),
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyF):
+            const _SearchIntent(),
         LogicalKeySet(LogicalKeyboardKey.escape): const DismissIntent(),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
-          _ComposeIntent: CallbackAction<_ComposeIntent>(onInvoke: (_) => _openCompose()),
+          _ComposeIntent:
+              CallbackAction<_ComposeIntent>(onInvoke: (_) => _openCompose()),
           _SearchIntent: CallbackAction<_SearchIntent>(onInvoke: (_) {
             _searchFocus.requestFocus();
             return null;
@@ -69,12 +72,15 @@ class _AppShellState extends ConsumerState<AppShell> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.sm),
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.sm),
                     child: AnimatedContainer(
                       duration: AppMotion.duration(settings.animation),
                       curve: AppMotion.curve(settings.animation),
                       decoration: BoxDecoration(
-                        color: settings.blurEnabled ? colors.surface.withValues(alpha: 0.96) : colors.surface,
+                        color: settings.blurEnabled
+                            ? colors.surface.withValues(alpha: 0.96)
+                            : colors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: colors.border),
                       ),
@@ -84,11 +90,20 @@ class _AppShellState extends ConsumerState<AppShell> {
                             ? _CompactLayout(onCompose: _openCompose)
                             : Row(
                                 children: [
-                                  SizedBox(width: isNarrow ? 240 : 260, child: const Sidebar()),
-                                  VerticalDivider(width: 1, color: colors.divider),
-                                  SizedBox(width: isNarrow ? 340 : 390, child: const MessageListPane()),
-                                  VerticalDivider(width: 1, color: colors.divider),
-                                  Expanded(child: ReaderPane(message: inbox.selectedMessage, onCompose: _openCompose)),
+                                  SizedBox(
+                                      width: isNarrow ? 240 : 260,
+                                      child: const Sidebar()),
+                                  VerticalDivider(
+                                      width: 1, color: colors.divider),
+                                  SizedBox(
+                                      width: isNarrow ? 340 : 390,
+                                      child: const MessageListPane()),
+                                  VerticalDivider(
+                                      width: 1, color: colors.divider),
+                                  Expanded(
+                                      child: ReaderPane(
+                                          message: inbox.selectedMessage,
+                                          onCompose: _openCompose)),
                                 ],
                               ),
                       ),
@@ -103,7 +118,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 
-  void _openCompose({EmailMessage? replyTo, ComposeMode mode = ComposeMode.newMessage}) {
+  void _openCompose(
+      {EmailMessage? replyTo, ComposeMode mode = ComposeMode.newMessage}) {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -141,7 +157,8 @@ class _CompactLayout extends ConsumerWidget {
         Expanded(
           child: inbox.selectedMessage == null
               ? const MessageListPane()
-              : ReaderPane(message: inbox.selectedMessage, onCompose: onCompose),
+              : ReaderPane(
+                  message: inbox.selectedMessage, onCompose: onCompose),
         ),
       ],
     );

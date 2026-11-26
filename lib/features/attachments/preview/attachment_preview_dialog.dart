@@ -24,17 +24,25 @@ class AttachmentPreviewDialog extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(attachment.name, style: Theme.of(context).textTheme.titleLarge),
-                        Text('Preview is read-only in Phase 1 mock foundation', style: Theme.of(context).textTheme.bodySmall),
+                        Text(attachment.name,
+                            style: Theme.of(context).textTheme.titleLarge),
+                        Text('Preview is read-only in Phase 1 mock foundation',
+                            style: Theme.of(context).textTheme.bodySmall),
                       ],
                     ),
                   ),
-                  IconButton(tooltip: 'Close', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close_rounded)),
+                  IconButton(
+                      tooltip: 'Close',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded)),
                 ],
               ),
             ),
             const Divider(height: 1),
-            Expanded(child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: AttachmentPreviewService.preview(attachment))),
+            Expanded(
+                child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: AttachmentPreviewService.preview(attachment))),
           ],
         ),
       ),

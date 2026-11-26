@@ -42,12 +42,15 @@ class InboxState {
       account: account ?? this.account,
       messages: messages ?? this.messages,
       selectedFolder: selectedFolder ?? this.selectedFolder,
-      selectedMessageId: clearSelectedMessage ? null : (selectedMessageId ?? this.selectedMessageId),
+      selectedMessageId: clearSelectedMessage
+          ? null
+          : (selectedMessageId ?? this.selectedMessageId),
       selectedIds: selectedIds ?? this.selectedIds,
       searchQuery: searchQuery ?? this.searchQuery,
       sortNewestFirst: sortNewestFirst ?? this.sortNewestFirst,
       filterUnreadOnly: filterUnreadOnly ?? this.filterUnreadOnly,
-      filterAttachmentsOnly: filterAttachmentsOnly ?? this.filterAttachmentsOnly,
+      filterAttachmentsOnly:
+          filterAttachmentsOnly ?? this.filterAttachmentsOnly,
     );
   }
 
@@ -79,7 +82,8 @@ class InboxState {
       ].join(' ').toLowerCase();
       return haystack.contains(q);
     }).toList();
-    filtered.sort((a, b) => sortNewestFirst ? b.date.compareTo(a.date) : a.date.compareTo(b.date));
+    filtered.sort((a, b) =>
+        sortNewestFirst ? b.date.compareTo(a.date) : a.date.compareTo(b.date));
     return filtered;
   }
 
@@ -94,16 +98,58 @@ class InboxState {
 
   List<FolderItem> get folders {
     int count(MailFolder f) => messages.where((m) => m.folder == f).length;
-    final starred = messages.where((m) => m.isStarred && m.folder != MailFolder.trash).length;
+    final starred = messages
+        .where((m) => m.isStarred && m.folder != MailFolder.trash)
+        .length;
     return [
-      FolderItem(id: 'inbox', label: 'Inbox', icon: _iconInbox, folder: MailFolder.inbox, count: count(MailFolder.inbox)),
-      FolderItem(id: 'starred', label: 'Starred', icon: _iconStar, folder: MailFolder.starred, count: starred),
-      FolderItem(id: 'snoozed', label: 'Snoozed', icon: _iconSnooze, folder: MailFolder.snoozed, count: count(MailFolder.snoozed)),
-      FolderItem(id: 'drafts', label: 'Drafts', icon: _iconDrafts, folder: MailFolder.drafts, count: count(MailFolder.drafts)),
-      FolderItem(id: 'sent', label: 'Sent', icon: _iconSent, folder: MailFolder.sent, count: count(MailFolder.sent)),
-      FolderItem(id: 'archive', label: 'Archive', icon: _iconArchive, folder: MailFolder.archive, count: count(MailFolder.archive)),
-      FolderItem(id: 'spam', label: 'Spam', icon: _iconSpam, folder: MailFolder.spam, count: count(MailFolder.spam)),
-      FolderItem(id: 'trash', label: 'Trash', icon: _iconTrash, folder: MailFolder.trash, count: count(MailFolder.trash)),
+      FolderItem(
+          id: 'inbox',
+          label: 'Inbox',
+          icon: _iconInbox,
+          folder: MailFolder.inbox,
+          count: count(MailFolder.inbox)),
+      FolderItem(
+          id: 'starred',
+          label: 'Starred',
+          icon: _iconStar,
+          folder: MailFolder.starred,
+          count: starred),
+      FolderItem(
+          id: 'snoozed',
+          label: 'Snoozed',
+          icon: _iconSnooze,
+          folder: MailFolder.snoozed,
+          count: count(MailFolder.snoozed)),
+      FolderItem(
+          id: 'drafts',
+          label: 'Drafts',
+          icon: _iconDrafts,
+          folder: MailFolder.drafts,
+          count: count(MailFolder.drafts)),
+      FolderItem(
+          id: 'sent',
+          label: 'Sent',
+          icon: _iconSent,
+          folder: MailFolder.sent,
+          count: count(MailFolder.sent)),
+      FolderItem(
+          id: 'archive',
+          label: 'Archive',
+          icon: _iconArchive,
+          folder: MailFolder.archive,
+          count: count(MailFolder.archive)),
+      FolderItem(
+          id: 'spam',
+          label: 'Spam',
+          icon: _iconSpam,
+          folder: MailFolder.spam,
+          count: count(MailFolder.spam)),
+      FolderItem(
+          id: 'trash',
+          label: 'Trash',
+          icon: _iconTrash,
+          folder: MailFolder.trash,
+          count: count(MailFolder.trash)),
     ];
   }
 }
@@ -135,7 +181,8 @@ class InboxController extends Notifier<InboxState> {
   }
 
   void selectFolder(MailFolder folder) {
-    final next = state.copyWith(selectedFolder: folder, selectedIds: <String>{});
+    final next =
+        state.copyWith(selectedFolder: folder, selectedIds: <String>{});
     final visible = next.visibleMessages;
     state = next.copyWith(
       selectedMessageId: visible.isNotEmpty ? visible.first.id : null,
@@ -159,22 +206,29 @@ class InboxController extends Notifier<InboxState> {
   void clearSelection() => state = state.copyWith(selectedIds: <String>{});
 
   void selectAllVisible() {
-    state = state.copyWith(selectedIds: state.visibleMessages.map((e) => e.id).toSet());
+    state = state.copyWith(
+        selectedIds: state.visibleMessages.map((e) => e.id).toSet());
   }
 
   void setSearch(String query) {
     final next = state.copyWith(searchQuery: query, selectedIds: <String>{});
     final visible = next.visibleMessages;
-    final selectedStillVisible = visible.any((m) => m.id == next.selectedMessageId);
+    final selectedStillVisible =
+        visible.any((m) => m.id == next.selectedMessageId);
     state = next.copyWith(
-      selectedMessageId: selectedStillVisible ? next.selectedMessageId : (visible.isNotEmpty ? visible.first.id : null),
+      selectedMessageId: selectedStillVisible
+          ? next.selectedMessageId
+          : (visible.isNotEmpty ? visible.first.id : null),
       clearSelectedMessage: !selectedStillVisible && visible.isEmpty,
     );
   }
 
-  void setSortNewestFirst(bool newestFirst) => state = state.copyWith(sortNewestFirst: newestFirst);
-  void toggleUnreadOnly() => state = state.copyWith(filterUnreadOnly: !state.filterUnreadOnly);
-  void toggleAttachmentsOnly() => state = state.copyWith(filterAttachmentsOnly: !state.filterAttachmentsOnly);
+  void setSortNewestFirst(bool newestFirst) =>
+      state = state.copyWith(sortNewestFirst: newestFirst);
+  void toggleUnreadOnly() =>
+      state = state.copyWith(filterUnreadOnly: !state.filterUnreadOnly);
+  void toggleAttachmentsOnly() => state =
+      state.copyWith(filterAttachmentsOnly: !state.filterAttachmentsOnly);
 
   void toggleStar(String id) {
     _updateMessage(id, (m) => m.copyWith(isStarred: !m.isStarred));
@@ -217,7 +271,8 @@ class InboxController extends Notifier<InboxState> {
   }
 
   void sendMock(EmailMessage message) {
-    final sent = message.copyWith(folder: MailFolder.sent, isDraft: false, date: DateTime.now());
+    final sent = message.copyWith(
+        folder: MailFolder.sent, isDraft: false, date: DateTime.now());
     saveDraft(sent);
     if (state.selectedFolder == MailFolder.drafts) {
       _ensureSelectedVisible();
@@ -237,10 +292,13 @@ class InboxController extends Notifier<InboxState> {
     );
   }
 
-  void _updateMany(Set<String> ids, EmailMessage Function(EmailMessage) update) {
+  void _updateMany(
+      Set<String> ids, EmailMessage Function(EmailMessage) update) {
     if (ids.isEmpty) return;
     state = state.copyWith(
-      messages: state.messages.map((m) => ids.contains(m.id) ? update(m) : m).toList(),
+      messages: state.messages
+          .map((m) => ids.contains(m.id) ? update(m) : m)
+          .toList(),
     );
   }
 
@@ -254,5 +312,5 @@ class InboxController extends Notifier<InboxState> {
   }
 }
 
-final inboxControllerProvider = NotifierProvider<InboxController, InboxState>(InboxController.new);
-
+final inboxControllerProvider =
+    NotifierProvider<InboxController, InboxState>(InboxController.new);

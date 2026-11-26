@@ -5,17 +5,40 @@ class SanitizedHtml {
 }
 
 class HtmlSanitizer {
-  static final RegExp _scriptTag = RegExp(r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', caseSensitive: false, dotAll: true);
-  static final RegExp _styleTag = RegExp(r'<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>', caseSensitive: false, dotAll: true);
-  static final RegExp _iframeTag = RegExp(r'<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>|<iframe\b[^>]*\/?>', caseSensitive: false, dotAll: true);
-  static final RegExp _objectTag = RegExp(r'<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>', caseSensitive: false, dotAll: true);
-  static final RegExp _embedTag = RegExp(r'<embed\b[^>]*>', caseSensitive: false);
-  static final RegExp _formTag = RegExp(r'<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>', caseSensitive: false, dotAll: true);
-  static final RegExp _eventHandlers = RegExp('''\\son\\w+\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+)''', caseSensitive: false);
-  static final RegExp _jsHref = RegExp('''(href|src)\\s*=\\s*(?:"\\s*(javascript|data):[^"]*"|'\\s*(javascript|data):[^']*')''', caseSensitive: false);
-  static final RegExp _remoteImg = RegExp('''<img\\b([^>]*?)src\\s*=\\s*("http[^"]*"|'http[^']*')([^>]*)>''', caseSensitive: false, dotAll: true);
+  static final RegExp _scriptTag = RegExp(
+      r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>',
+      caseSensitive: false,
+      dotAll: true);
+  static final RegExp _styleTag = RegExp(
+      r'<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>',
+      caseSensitive: false,
+      dotAll: true);
+  static final RegExp _iframeTag = RegExp(
+      r'<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>|<iframe\b[^>]*\/?>',
+      caseSensitive: false,
+      dotAll: true);
+  static final RegExp _objectTag = RegExp(
+      r'<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>',
+      caseSensitive: false,
+      dotAll: true);
+  static final RegExp _embedTag =
+      RegExp(r'<embed\b[^>]*>', caseSensitive: false);
+  static final RegExp _formTag = RegExp(
+      r'<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>',
+      caseSensitive: false,
+      dotAll: true);
+  static final RegExp _eventHandlers = RegExp(
+      '''\\son\\w+\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+)''',
+      caseSensitive: false);
+  static final RegExp _jsHref = RegExp(
+      '''(href|src)\\s*=\\s*(?:"\\s*(javascript|data):[^"]*"|'\\s*(javascript|data):[^']*')''',
+      caseSensitive: false);
+  static final RegExp _remoteImg = RegExp(
+      '''<img\\b([^>]*?)src\\s*=\\s*("http[^"]*"|'http[^']*')([^>]*)>''',
+      caseSensitive: false, dotAll: true);
 
-  static SanitizedHtml sanitize(String input, {required bool allowRemoteImages}) {
+  static SanitizedHtml sanitize(String input,
+      {required bool allowRemoteImages}) {
     var html = input;
     var hasRemoteImages = false;
 
@@ -33,19 +56,26 @@ class HtmlSanitizer {
       if (allowRemoteImages) return m.group(0)!;
       final before = m.group(1) ?? '';
       final after = m.group(3) ?? '';
-      final altMatch = RegExp('''alt\\s*=\\s*("([^"]*)"|'([^']*)')''', caseSensitive: false).firstMatch('$before $after');
-      final alt = altMatch?.group(2) ?? altMatch?.group(3) ?? 'Remote image blocked';
+      final altMatch =
+          RegExp('''alt\\s*=\\s*("([^"]*)"|'([^']*)')''', caseSensitive: false)
+              .firstMatch('$before $after');
+      final alt =
+          altMatch?.group(2) ?? altMatch?.group(3) ?? 'Remote image blocked';
       return '<div style="padding:12px;border:1px solid #d9e2ec;border-radius:8px;color:#526071;background:#f5f7fa;font-size:13px">Remote image blocked: ${_escapeHtml(alt)}</div>';
     });
 
     // Basic guard for plain http/https/data image urls not caught in simple form.
-    if (RegExp(r'<img\b[^>]*src\s*=\s*"https?:', caseSensitive: false).hasMatch(html) ||
-        RegExp(r"<img\b[^>]*src\s*=\s*'https?:", caseSensitive: false).hasMatch(html)) {
+    if (RegExp(r'<img\b[^>]*src\s*=\s*"https?:', caseSensitive: false)
+            .hasMatch(html) ||
+        RegExp(r"<img\b[^>]*src\s*=\s*'https?:", caseSensitive: false)
+            .hasMatch(html)) {
       hasRemoteImages = true;
       if (!allowRemoteImages) {
-        html = html.replaceAllMapped(RegExp(r'<img\b[^>]*>', caseSensitive: false), (m) {
+        html = html.replaceAllMapped(
+            RegExp(r'<img\b[^>]*>', caseSensitive: false), (m) {
           final tag = m.group(0)!;
-          if (RegExp(r'''src\s*=\s*["']https?:''', caseSensitive: false).hasMatch(tag)) {
+          if (RegExp(r'''src\s*=\s*["']https?:''', caseSensitive: false)
+              .hasMatch(tag)) {
             return '<div style="padding:12px;border:1px solid #d9e2ec;border-radius:8px;color:#526071;background:#f5f7fa;font-size:13px">Remote image blocked.</div>';
           }
           return tag;
@@ -61,7 +91,8 @@ class HtmlSanitizer {
     text = text.replaceAll(_scriptTag, ' ');
     text = text.replaceAll(_styleTag, ' ');
     text = text.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
-    text = text.replaceAll(RegExp(r'</p>|</div>|</li>|</tr>|</h\d>', caseSensitive: false), '\n');
+    text = text.replaceAll(
+        RegExp(r'</p>|</div>|</li>|</tr>|</h\d>', caseSensitive: false), '\n');
     text = text.replaceAll(RegExp(r'<[^>]+>'), ' ');
     text = text
         .replaceAll('&nbsp;', ' ')
@@ -77,7 +108,8 @@ class HtmlSanitizer {
 
   static bool hasUnsafeUrl(String url) {
     final lower = url.trim().toLowerCase();
-    return lower.startsWith('javascript:') || lower.startsWith('data:text/html');
+    return lower.startsWith('javascript:') ||
+        lower.startsWith('data:text/html');
   }
 
   static String _escapeHtml(String value) {

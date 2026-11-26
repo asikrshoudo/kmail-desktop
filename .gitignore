@@ -29,3 +29,5 @@ coverage/
 # Generated
 *.g.dart
 *.freezed.dart
+
+.tmp-format/

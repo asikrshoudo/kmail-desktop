@@ -35,7 +35,8 @@ class AppTheme {
       surfaceTint: tokens.primary,
     );
 
-    final textTheme = AppTypography.textTheme(tokens.textPrimary, tokens.textSecondary);
+    final textTheme =
+        AppTypography.textTheme(tokens.textPrimary, tokens.textSecondary);
     final radius = BorderRadius.circular(AppRadii.md);
 
     return ThemeData(
@@ -59,24 +60,32 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: tokens.surface,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: tokens.border)),
+        shape: RoundedRectangleBorder(
+            borderRadius: radius, side: BorderSide(color: tokens.border)),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: tokens.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.lg)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: tokens.surfaceMuted,
-        border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: tokens.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: tokens.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: tokens.primary, width: 1.4)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+            borderRadius: radius, borderSide: BorderSide(color: tokens.border)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: radius, borderSide: BorderSide(color: tokens.border)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: radius,
+            borderSide: BorderSide(color: tokens.primary, width: 1.4)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         hintStyle: textTheme.bodyMedium?.copyWith(color: tokens.textSecondary),
         labelStyle: textTheme.bodyMedium?.copyWith(color: tokens.textSecondary),
       ),
       listTileTheme: ListTileThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.sm)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm)),
         selectedTileColor: tokens.selection,
         iconColor: tokens.textSecondary,
         textColor: tokens.textPrimary,
@@ -89,7 +98,8 @@ class AppTheme {
         ),
         textStyle: textTheme.bodySmall?.copyWith(color: Colors.white),
       ),
-      dividerTheme: DividerThemeData(color: tokens.divider, thickness: 1, space: 1),
+      dividerTheme:
+          DividerThemeData(color: tokens.divider, thickness: 1, space: 1),
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         side: BorderSide(color: tokens.border),
@@ -97,20 +107,23 @@ class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           foregroundColor: tokens.textSecondary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: tokens.primary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: tokens.primary,
           foregroundColor: tokens.onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       ),
@@ -118,12 +131,14 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: tokens.textPrimary,
           side: BorderSide(color: tokens.border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: isDark ? const Color(0xFF243041) : const Color(0xFF182230),
+        backgroundColor:
+            isDark ? const Color(0xFF243041) : const Color(0xFF182230),
         contentTextStyle: textTheme.bodyMedium?.copyWith(color: Colors.white),
         behavior: SnackBarBehavior.floating,
       ),

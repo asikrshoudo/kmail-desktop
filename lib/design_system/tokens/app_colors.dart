@@ -97,7 +97,8 @@ class AppColors extends ThemeExtension<AppColors> {
   final AppColorTokens tokens;
 
   @override
-  AppColors copyWith({AppColorTokens? tokens}) => AppColors(tokens: tokens ?? this.tokens);
+  AppColors copyWith({AppColorTokens? tokens}) =>
+      AppColors(tokens: tokens ?? this.tokens);
 
   @override
   AppColors lerp(ThemeExtension<AppColors>? other, double t) {

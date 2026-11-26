@@ -31,7 +31,8 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
     final colors = context.appColors.tokens;
     if (message == null) {
       return Center(
-        child: Text('Select a message to read', style: Theme.of(context).textTheme.bodyMedium),
+        child: Text('Select a message to read',
+            style: Theme.of(context).textTheme.bodyMedium),
       );
     }
 
@@ -41,44 +42,77 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
     }
 
     final settings = ref.watch(settingsControllerProvider);
-    final allowRemote = settings.remoteImages == RemoteImagesPolicy.allowed || _allowRemoteForThisMessage;
-    final sanitized = HtmlSanitizer.sanitize(message.bodyHtml, allowRemoteImages: allowRemote);
+    final allowRemote = settings.remoteImages == RemoteImagesPolicy.allowed ||
+        _allowRemoteForThisMessage;
+    final sanitized = HtmlSanitizer.sanitize(message.bodyHtml,
+        allowRemoteImages: allowRemote);
     final date = DateFormat('EEE, MMM d, y • h:mm a').format(message.date);
 
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: colors.divider))),
+          decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: colors.divider))),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Expanded(child: Text(message.subject, style: Theme.of(context).textTheme.headlineSmall)),
+                  Expanded(
+                      child: Text(message.subject,
+                          style: Theme.of(context).textTheme.headlineSmall)),
                   IconButton(
                     tooltip: message.isStarred ? 'Unstar' : 'Star',
-                    onPressed: () => ref.read(inboxControllerProvider.notifier).toggleStar(message.id),
-                    icon: Icon(message.isStarred ? Icons.star_rounded : Icons.star_border_rounded, color: message.isStarred ? colors.warning : null),
+                    onPressed: () => ref
+                        .read(inboxControllerProvider.notifier)
+                        .toggleStar(message.id),
+                    icon: Icon(
+                        message.isStarred
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: message.isStarred ? colors.warning : null),
                   ),
-                  IconButton(tooltip: 'Archive', onPressed: () => ref.read(inboxControllerProvider.notifier).archiveMessage(message.id), icon: const Icon(Icons.archive_outlined)),
-                  IconButton(tooltip: 'Delete', onPressed: () => ref.read(inboxControllerProvider.notifier).deleteMessage(message.id), icon: const Icon(Icons.delete_outline_rounded)),
+                  IconButton(
+                      tooltip: 'Archive',
+                      onPressed: () => ref
+                          .read(inboxControllerProvider.notifier)
+                          .archiveMessage(message.id),
+                      icon: const Icon(Icons.archive_outlined)),
+                  IconButton(
+                      tooltip: 'Delete',
+                      onPressed: () => ref
+                          .read(inboxControllerProvider.notifier)
+                          .deleteMessage(message.id),
+                      icon: const Icon(Icons.delete_outline_rounded)),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(radius: 18, backgroundColor: colors.surfaceMuted, child: Text(message.sender.name.isNotEmpty ? message.sender.name[0] : '?')),
+                  CircleAvatar(
+                      radius: 18,
+                      backgroundColor: colors.surfaceMuted,
+                      child: Text(message.sender.name.isNotEmpty
+                          ? message.sender.name[0]
+                          : '?')),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(message.sender.display, style: Theme.of(context).textTheme.titleSmall),
-                        Text('To: ${message.to.map((e) => e.display).join(', ')}', style: Theme.of(context).textTheme.bodySmall),
-                        if (message.cc.isNotEmpty) Text('Cc: ${message.cc.map((e) => e.display).join(', ')}', style: Theme.of(context).textTheme.bodySmall),
-                        Text(date, style: Theme.of(context).textTheme.bodySmall),
+                        Text(message.sender.display,
+                            style: Theme.of(context).textTheme.titleSmall),
+                        Text(
+                            'To: ${message.to.map((e) => e.display).join(', ')}',
+                            style: Theme.of(context).textTheme.bodySmall),
+                        if (message.cc.isNotEmpty)
+                          Text(
+                              'Cc: ${message.cc.map((e) => e.display).join(', ')}',
+                              style: Theme.of(context).textTheme.bodySmall),
+                        Text(date,
+                            style: Theme.of(context).textTheme.bodySmall),
                       ],
                     ),
                   ),
@@ -89,9 +123,21 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  OutlinedButton.icon(onPressed: () => widget.onCompose(replyTo: message, mode: ComposeMode.reply), icon: const Icon(Icons.reply_rounded, size: 18), label: const Text('Reply')),
-                  OutlinedButton.icon(onPressed: () => widget.onCompose(replyTo: message, mode: ComposeMode.replyAll), icon: const Icon(Icons.reply_all_rounded, size: 18), label: const Text('Reply all')),
-                  OutlinedButton.icon(onPressed: () => widget.onCompose(replyTo: message, mode: ComposeMode.forward), icon: const Icon(Icons.forward_rounded, size: 18), label: const Text('Forward')),
+                  OutlinedButton.icon(
+                      onPressed: () => widget.onCompose(
+                          replyTo: message, mode: ComposeMode.reply),
+                      icon: const Icon(Icons.reply_rounded, size: 18),
+                      label: const Text('Reply')),
+                  OutlinedButton.icon(
+                      onPressed: () => widget.onCompose(
+                          replyTo: message, mode: ComposeMode.replyAll),
+                      icon: const Icon(Icons.reply_all_rounded, size: 18),
+                      label: const Text('Reply all')),
+                  OutlinedButton.icon(
+                      onPressed: () => widget.onCompose(
+                          replyTo: message, mode: ComposeMode.forward),
+                      icon: const Icon(Icons.forward_rounded, size: 18),
+                      label: const Text('Forward')),
                 ],
               ),
             ],
@@ -100,14 +146,21 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
         if (sanitized.hasRemoteImages && !allowRemote)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             color: colors.surfaceMuted,
             child: Row(
               children: [
-                Icon(Icons.image_not_supported_outlined, size: 18, color: colors.textSecondary),
+                Icon(Icons.image_not_supported_outlined,
+                    size: 18, color: colors.textSecondary),
                 const SizedBox(width: 8),
-                Expanded(child: Text('Remote images are blocked for privacy.', style: Theme.of(context).textTheme.bodySmall)),
-                TextButton(onPressed: () => setState(() => _allowRemoteForThisMessage = true), child: const Text('Load images')),
+                Expanded(
+                    child: Text('Remote images are blocked for privacy.',
+                        style: Theme.of(context).textTheme.bodySmall)),
+                TextButton(
+                    onPressed: () =>
+                        setState(() => _allowRemoteForThisMessage = true),
+                    child: const Text('Load images')),
               ],
             ),
           ),
@@ -118,17 +171,32 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
               if (message.labels.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: Wrap(spacing: 8, children: [for (final l in message.labels) Chip(label: Text(l))]),
+                  child: Wrap(spacing: 8, children: [
+                    for (final l in message.labels) Chip(label: Text(l))
+                  ]),
                 ),
               SelectionArea(
                 child: Html(
                   data: sanitized.html,
                   style: {
-                    'body': Style(margin: Margins.zero, padding: HtmlPaddings.zero, fontSize: FontSize(14), lineHeight: const LineHeight(1.6)),
+                    'body': Style(
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                        fontSize: FontSize(14),
+                        lineHeight: const LineHeight(1.6)),
                     'table': Style(border: Border.all(color: colors.border)),
-                    'td': Style(padding: HtmlPaddings.all(6), border: Border.all(color: colors.border)),
-                    'th': Style(padding: HtmlPaddings.all(6), border: Border.all(color: colors.border)),
-                    'blockquote': Style(margin: Margins.symmetric(vertical: 8), padding: HtmlPaddings.only(left: 12), border: Border(left: BorderSide(color: colors.border, width: 3)), color: colors.textSecondary),
+                    'td': Style(
+                        padding: HtmlPaddings.all(6),
+                        border: Border.all(color: colors.border)),
+                    'th': Style(
+                        padding: HtmlPaddings.all(6),
+                        border: Border.all(color: colors.border)),
+                    'blockquote': Style(
+                        margin: Margins.symmetric(vertical: 8),
+                        padding: HtmlPaddings.only(left: 12),
+                        border: Border(
+                            left: BorderSide(color: colors.border, width: 3)),
+                        color: colors.textSecondary),
                     'a': Style(color: colors.primary),
                   },
                   onLinkTap: (url, _, __) => _handleLink(context, url),
@@ -138,7 +206,8 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
                 const SizedBox(height: AppSpacing.lg),
                 Divider(color: colors.divider),
                 const SizedBox(height: AppSpacing.sm),
-                Text('Attachments', style: Theme.of(context).textTheme.titleSmall),
+                Text('Attachments',
+                    style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: AppSpacing.sm),
                 AttachmentList(attachments: message.attachments),
               ],
@@ -152,12 +221,17 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
   Future<void> _handleLink(BuildContext context, String? url) async {
     if (url == null || url.trim().isEmpty) return;
     if (HtmlSanitizer.hasUnsafeUrl(url)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Blocked unsafe link.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Blocked unsafe link.')));
       return;
     }
     final uri = Uri.tryParse(url);
-    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https') || uri.isScheme('mailto'))) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unsupported link type.')));
+    if (uri == null ||
+        !(uri.isScheme('http') ||
+            uri.isScheme('https') ||
+            uri.isScheme('mailto'))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unsupported link type.')));
       return;
     }
     final confirm = await showDialog<bool>(
@@ -166,8 +240,12 @@ class _ReaderPaneState extends ConsumerState<ReaderPane> {
         title: const Text('Open external link?'),
         content: Text(url),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Open')),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Open')),
         ],
       ),
     );
