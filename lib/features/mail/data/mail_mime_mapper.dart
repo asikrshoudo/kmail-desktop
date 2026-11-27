@@ -33,12 +33,10 @@ class MailMimeMapper {
     final parts = mime.allPartsFlat;
     for (var i = 0; i < parts.length; i++) {
       final part = parts[i];
-      final dyn = part as dynamic;
-      final String? name = dyn.decodeFileName() as String?;
-      final String media =
-          (dyn.mediaType?.text as String?)?.toLowerCase() ?? '';
+      final String? name = part.decodeFileName();
+      final String media = part.mediaType.text.toLowerCase();
       final ContentDisposition? disp =
-          (dyn.contentDisposition?.disposition as ContentDisposition?);
+          part.getHeaderContentDisposition()?.disposition;
       final bool isAttachment = disp == ContentDisposition.attachment ||
           (name != null &&
               name.isNotEmpty &&
@@ -53,19 +51,19 @@ class MailMimeMapper {
         if (type == AttachmentType.txt ||
             type == AttachmentType.csv ||
             type == AttachmentType.html) {
-          previewText = dyn.decodeContentText() as String?;
+          previewText = part.decodeContentText();
         }
         if (type == AttachmentType.png ||
             type == AttachmentType.jpg ||
             type == AttachmentType.gif ||
             type == AttachmentType.webp ||
             type == AttachmentType.pdf) {
-          final decoded = dyn.decodeContentBinary();
+          final decoded = part.decodeContentBinary();
           if (decoded is List<int>) bytes = decoded;
         }
       } catch (_) {}
       attachments.add(Attachment(
-        id: '${mime.guid ?? mime.sequenceId ?? i}-$i-${fname.hashCode}',
+        id: '${mime.guid?.toString() ?? mime.sequenceId ?? i}-$i-${fname.hashCode}',
         name: fname,
         type: type,
         sizeBytes: bytes?.length ?? 0,
@@ -74,10 +72,8 @@ class MailMimeMapper {
       ));
     }
 
-    final Object? mimeIdRaw = (mime as dynamic).messageId;
-    final String? mimeId = mimeIdRaw is String ? mimeIdRaw : null;
-    final String id = (mime.guid as String?) ??
-        mimeId ??
+    final String? mimeId = mime.getHeaderValue('message-id');
+    final String id = (mime.guid?.toString() ?? mimeId) ??
         '$accountId-${folder.name}-${date.microsecondsSinceEpoch}-${subject.hashCode}';
 
     return EmailMessage(

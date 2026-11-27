@@ -48,11 +48,17 @@ class MailService {
       final fetch = await client.fetchMessages(
           sequence, '(FLAGS UID ENVELOPE RFC822.SIZE BODY.PEEK[])');
       final mailboxPath = mailbox.path;
-      final messages = fetch.messages.reversed
-          .map((m) =>
+      final messages = <EmailMessage>[];
+      for (final m in fetch.messages.reversed) {
+        try {
+          messages.add(
               MailMimeMapper.fromMime(m, accountId: config.id, folder: folder)
-                  .copyWith(remoteMailbox: mailboxPath))
-          .toList();
+                  .copyWith(remoteMailbox: mailboxPath));
+        } catch (_) {
+          // A single malformed message must not fail the whole inbox.
+          // Skip it and keep the remaining messages.
+        }
+      }
       await client.logout();
       return messages;
     } finally {
@@ -153,7 +159,8 @@ class MailService {
   Future<void> _connectImap(
       ImapClient client, MailAccountConfig config, String password) async {
     final isSecure = config.imapSecurity == MailSecurity.sslTls;
-    await _connectServer(client, config.imapHost, config.imapPort, isSecure);
+    await client.connectToServer(config.imapHost, config.imapPort,
+        isSecure: isSecure);
     if (config.imapSecurity == MailSecurity.startTls) {
       await client.startTls();
     }
@@ -163,22 +170,13 @@ class MailService {
   Future<void> _connectSmtp(
       SmtpClient client, MailAccountConfig config, String password) async {
     final isSecure = config.smtpSecurity == MailSecurity.sslTls;
-    await _connectServer(client, config.smtpHost, config.smtpPort, isSecure);
+    await client.connectToServer(config.smtpHost, config.smtpPort,
+        isSecure: isSecure);
     await client.ehlo();
     if (config.smtpSecurity == MailSecurity.startTls) {
       await client.startTls();
     }
     await client.authenticate(config.username, password, AuthMechanism.plain);
-  }
-
-  Future<void> _connectServer(
-      dynamic client, String host, int port, bool isSecure) async {
-    final fn = client.connectToServer as Function;
-    try {
-      await Function.apply(fn, [host, port], {#isSecure: isSecure});
-    } catch (_) {
-      await Function.apply(fn, [host], {#port: port, #isSecure: isSecure});
-    }
   }
 
   Future<Mailbox?> _selectMailbox(ImapClient client, MailFolder folder) async {

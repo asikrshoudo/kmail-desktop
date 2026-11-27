@@ -584,7 +584,7 @@ class InboxController extends Notifier<InboxState> {
         msg.contains('Connection')) {
       return 'Unable to connect to the mail server. Check your internet connection and server settings.';
     }
-    return 'Mail operation failed. ${msg.replaceAll('Exception: ', '').split('\n').first}';
+    return 'Mail operation failed. Please try again later.';
   }
 
   bool _isAuthError(Object e) {
