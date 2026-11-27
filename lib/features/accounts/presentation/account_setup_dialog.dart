@@ -32,6 +32,7 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
   bool _makeDefault = false;
   String? _status;
   bool _statusOk = false;
+  String _provider = 'other';
 
   @override
   void initState() {
@@ -140,7 +141,9 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
     if (!mounted) return;
     setState(() {
       _testing = false;
-      _status = msg;
+      _status = ok
+          ? msg
+          : '$msg Use your full email address. If you use 2-step verification, create an app password.';
       _statusOk = ok;
     });
   }
@@ -177,7 +180,8 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _status = msg;
+        _status =
+            '$msg Use your full email address. If you use 2-step verification, create an app password.';
         _statusOk = false;
       });
       return;
@@ -190,6 +194,64 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
         content: Text(widget.existing == null
             ? 'Account connected.'
             : 'Account updated.')));
+  }
+
+  void _applyPreset(_Preset preset) {
+    _imapHost.text = preset.imapHost;
+    _smtpHost.text = preset.smtpHost;
+    _imapPort.text = preset.imapPort.toString();
+    _smtpPort.text = preset.smtpPort.toString();
+    _imapSecurity = preset.imapSecurity;
+    _smtpSecurity = preset.smtpSecurity;
+  }
+
+  void _applyProvider(String id) {
+    switch (id) {
+      case 'gmail':
+        _applyPreset(_presets['gmail.com']!);
+        break;
+      case 'outlook':
+        _applyPreset(_presets['outlook.com']!);
+        break;
+      case 'yahoo':
+        _applyPreset(_presets['yahoo.com']!);
+        break;
+      case 'icloud':
+        _applyPreset(_presets['icloud.com']!);
+        break;
+      case 'hostinger':
+        _applyPreset(const _Preset(
+            'imap.hostinger.com',
+            993,
+            MailSecurity.sslTls,
+            'smtp.hostinger.com',
+            465,
+            MailSecurity.sslTls));
+        break;
+      case 'other':
+      default:
+        break;
+    }
+    setState(() => _provider = id);
+  }
+
+  Widget _providerField() {
+    return DropdownButtonFormField<String>(
+      value: _provider,
+      decoration: const InputDecoration(labelText: 'Provider preset'),
+      items: const [
+        DropdownMenuItem(value: 'gmail', child: Text('Gmail')),
+        DropdownMenuItem(value: 'outlook', child: Text('Outlook')),
+        DropdownMenuItem(value: 'yahoo', child: Text('Yahoo')),
+        DropdownMenuItem(value: 'icloud', child: Text('iCloud')),
+        DropdownMenuItem(value: 'hostinger', child: Text('Hostinger')),
+        DropdownMenuItem(value: 'other', child: Text('Other / Manual')),
+      ],
+      onChanged: (v) {
+        if (v == null) return;
+        _applyProvider(v);
+      },
+    );
   }
 
   @override
@@ -221,46 +283,93 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
                       'Connect an existing email account using IMAP and SMTP. Kmail does not provide email hosting.',
                       style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: AppSpacing.md),
-                  _section(context, 'Account', [
-                    _field(_name, 'Display name', validator: _req),
-                    _field(_email, 'Email address',
-                        validator: _emailValidator,
-                        keyboard: TextInputType.emailAddress),
-                    _field(_username, 'Username', validator: _req),
-                    _field(
-                        _password,
-                        isEdit
-                            ? 'Password / app password (leave blank to keep existing)'
-                            : 'Password / app password',
-                        obscure: true,
-                        validator: isEdit ? null : _req),
-                  ]),
-                  _section(context, 'Incoming IMAP', [
-                    _field(_imapHost, 'IMAP host', validator: _req),
-                    Row(children: [
-                      Expanded(
-                          child: _field(_imapPort, 'Port',
-                              validator: _portValidator,
-                              keyboard: TextInputType.number)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: _securityDropdown('Security', _imapSecurity,
-                              (v) => setState(() => _imapSecurity = v))),
+                  if (isEdit) ...[
+                    _section(context, 'Account', [
+                      _field(_name, 'Display name', validator: _req),
+                      _field(_email, 'Email address',
+                          validator: _emailValidator,
+                          keyboard: TextInputType.emailAddress),
+                      _field(_username, 'Username', validator: _req),
+                      _field(_password,
+                          'Password / app password (leave blank to keep existing)',
+                          obscure: true, validator: isEdit ? null : _req),
                     ]),
-                  ]),
-                  _section(context, 'Outgoing SMTP', [
-                    _field(_smtpHost, 'SMTP host', validator: _req),
-                    Row(children: [
-                      Expanded(
-                          child: _field(_smtpPort, 'Port',
-                              validator: _portValidator,
-                              keyboard: TextInputType.number)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: _securityDropdown('Security', _smtpSecurity,
-                              (v) => setState(() => _smtpSecurity = v))),
+                    _section(context, 'Incoming IMAP', [
+                      _field(_imapHost, 'IMAP host', validator: _req),
+                      Row(children: [
+                        Expanded(
+                            child: _field(_imapPort, 'Port',
+                                validator: _portValidator,
+                                keyboard: TextInputType.number)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: _securityDropdown('Security', _imapSecurity,
+                                (v) => setState(() => _imapSecurity = v))),
+                      ]),
                     ]),
-                  ]),
+                    _section(context, 'Outgoing SMTP', [
+                      _field(_smtpHost, 'SMTP host', validator: _req),
+                      Row(children: [
+                        Expanded(
+                            child: _field(_smtpPort, 'Port',
+                                validator: _portValidator,
+                                keyboard: TextInputType.number)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: _securityDropdown('Security', _smtpSecurity,
+                                (v) => setState(() => _smtpSecurity = v))),
+                      ]),
+                    ]),
+                  ] else ...[
+                    _section(context, 'Account', [
+                      _providerField(),
+                      _field(_email, 'Email address',
+                          validator: _emailValidator,
+                          keyboard: TextInputType.emailAddress),
+                      _field(_password, 'Password / app password',
+                          obscure: true,
+                          validator: _req,
+                          helperText:
+                              'Full email address, or app password if 2-Step Verification is on.'),
+                    ]),
+                  ],
+                  if (!isEdit)
+                    ExpansionTile(
+                      title: const Text('Advanced / Manual setup'),
+                      initiallyExpanded: false,
+                      children: [
+                        _section(context, 'Incoming IMAP', [
+                          _field(_imapHost, 'IMAP host', validator: _req),
+                          Row(children: [
+                            Expanded(
+                                child: _field(_imapPort, 'Port',
+                                    validator: _portValidator,
+                                    keyboard: TextInputType.number)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                                child: _securityDropdown(
+                                    'Security',
+                                    _imapSecurity,
+                                    (v) => setState(() => _imapSecurity = v))),
+                          ]),
+                        ]),
+                        _section(context, 'Outgoing SMTP', [
+                          _field(_smtpHost, 'SMTP host', validator: _req),
+                          Row(children: [
+                            Expanded(
+                                child: _field(_smtpPort, 'Port',
+                                    validator: _portValidator,
+                                    keyboard: TextInputType.number)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                                child: _securityDropdown(
+                                    'Security',
+                                    _smtpSecurity,
+                                    (v) => setState(() => _smtpSecurity = v))),
+                          ]),
+                        ]),
+                      ],
+                    ),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _makeDefault,
@@ -342,12 +451,13 @@ class _AccountSetupDialogState extends ConsumerState<AccountSetupDialog> {
   Widget _field(TextEditingController c, String label,
       {String? Function(String?)? validator,
       bool obscure = false,
-      TextInputType? keyboard}) {
+      TextInputType? keyboard,
+      String? helperText}) {
     return TextFormField(
         controller: c,
         obscureText: obscure,
         keyboardType: keyboard,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(labelText: label, helperText: helperText),
         validator: validator);
   }
 
@@ -413,4 +523,6 @@ const _presets = <String, _Preset>{
       'smtp.mail.yahoo.com', 587, MailSecurity.startTls),
   'icloud.com': _Preset('imap.mail.me.com', 993, MailSecurity.sslTls,
       'smtp.mail.me.com', 587, MailSecurity.startTls),
+  'hostinger.com': _Preset('imap.hostinger.com', 993, MailSecurity.sslTls,
+      'smtp.hostinger.com', 465, MailSecurity.sslTls),
 };
